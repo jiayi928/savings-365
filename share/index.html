@@ -144,9 +144,140 @@
       <button class="btn btn-primary" onclick="saveSettings()" style="margin-top:8px">儲存設定</button>
 
       <div style="margin-top:24px">
-        <button class="btn btn-outline" onclick="openHelpModal()" style="width:100%; border-color: var(--accent-blue); color: var(--accent-blue); margin-bottom: 12px;">📖 查看使用說明</button>
+        <button class="btn btn-outline" onclick="switchTab('guide')" style="width:100%; border-color: var(--accent-blue); color: var(--accent-blue); margin-bottom: 12px;">📖 查看教學與設定方式</button>
         <button class="btn btn-danger" onclick="confirmReset()" style="width:100%">重置資料</button>
       </div>
+    </div>
+  </div>
+
+  <!-- ===== Guide Page (New Tab) ===== -->
+  <div class="tab-page" id="page-guide">
+    <div class="card" style="margin-bottom: 24px; text-align: left;">
+      <h3 style="color: var(--accent-blue); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        使用方式
+      </h3>
+      <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 16px;">
+        1. <b>選擇模式：</b> 前往「設定」挑選挑戰模式（如經典365或加壓雙倍）。<br>
+        2. <b>每日存錢：</b> 到「存款」點擊數字，或點擊「🎲幫我決定」隨機抽。<br>
+        3. <b>收集成就：</b> 達成特定天數可獲得專屬徽章！
+      </p>
+    </div>
+
+    <div class="card" style="text-align: left;">
+      <h3 style="color: var(--accent-purple); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        雲端連線方式 (進階)
+      </h3>
+      <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 16px;">
+        預設資料僅存在手機中。如果你想要讓資料<b>自動同步到 Google 試算表</b>，請依照以下步驟操作：
+      </p>
+      
+      <div style="background: var(--bg-primary); padding: 16px; border-radius: 12px; font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 16px;">
+        1. 在你的 Google 雲端硬碟建立一個新的「Google 試算表」。<br>
+        2. 點擊頂部選單 <b>擴充功能</b> ➔ <b>Apps Script</b>。<br>
+        3. 複製下方的程式碼，將原有的內容完全取代並貼上。<br>
+        4. 點擊右上角 <b>部署</b> ➔ <b>新增部署作業</b>。<br>
+        5. 選擇類型為 <b>網頁應用程式</b>。<br>
+        6. 將「誰可以存取」設為 <b>所有人</b>，並完成部署授權。<br>
+        7. 複製部署成功後的 <b>網頁應用程式網址</b>。<br>
+        8. 回到此 App 的「設定」頁面，點擊「設定同步後端」並貼上網址即可完成！
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <h4 style="color: var(--text-primary); margin: 0;">Apps Script 程式碼</h4>
+        <button class="btn btn-outline" onclick="copyBackendCode()" style="padding: 4px 12px; font-size: 0.8rem;">複製程式碼</button>
+      </div>
+      <pre style="background: var(--bg-primary); padding: 12px; border-radius: 8px; overflow-x: auto; color: var(--text-dim); font-size: 0.8rem; border: 1px solid var(--border); max-height: 300px; overflow-y: auto;"><code id="backendCodeBlock">const SHEET_NAME = '存款紀錄';
+
+function getOrCreateSheet() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(SHEET_NAME);
+    sheet.getRange('A1:D1').setValues([['日期', '金額', '區間', '備註']]);
+    sheet.getRange('A1:D1').setFontWeight('bold').setBackground('#4a90d9').setFontColor('white');
+    sheet.setFrozenRows(1);
+    sheet.setColumnWidth(1, 120);
+    sheet.setColumnWidth(2, 100);
+    sheet.setColumnWidth(3, 80);
+    sheet.setColumnWidth(4, 150);
+  }
+  return sheet;
+}
+
+function doGet(e) {
+  try {
+    const action = e.parameter.action || 'getAll';
+    if (action === 'getAll') return getAllRecords();
+    return jsonResponse({ status: 'error', message: '未知的 action' });
+  } catch (err) { return jsonResponse({ status: 'error', message: err.message }); }
+}
+
+function doPost(e) {
+  try {
+    const data = JSON.parse(e.postData.contents);
+    if (data.action === 'deposit') return addDeposit(data);
+    if (data.action === 'delete') return deleteDeposit(data);
+    return jsonResponse({ status: 'error', message: '未知的 action' });
+  } catch (err) { return jsonResponse({ status: 'error', message: err.message }); }
+}
+
+function getAllRecords() {
+  const sheet = getOrCreateSheet();
+  const lastRow = sheet.getLastRow();
+  if (lastRow <= 1) return jsonResponse({ status: 'success', records: [] });
+  const data = sheet.getRange(2, 1, lastRow - 1, 4).getValues();
+  const records = data.map(row => ({
+    date: formatDateValue(row[0]), amount: Number(row[1]),
+    pool: row[2] === '雙倍' ? 'double' : 'normal', note: row[3] || ''
+  }));
+  return jsonResponse({ status: 'success', records });
+}
+
+function addDeposit(data) {
+  const sheet = getOrCreateSheet();
+  const poolLabel = data.pool === 'double' ? '雙倍' : '正常';
+  const date = data.date || new Date().toISOString().split('T')[0];
+  const lastRow = sheet.getLastRow();
+  if (lastRow > 1) {
+    const existing = sheet.getRange(2, 1, lastRow - 1, 3).getValues();
+    for (let i = 0; i < existing.length; i++) {
+      if (Number(existing[i][1]) === Number(data.amount) && existing[i][2] === poolLabel) {
+        return jsonResponse({ status: 'error', message: '此金額已存在紀錄' });
+      }
+    }
+  }
+  sheet.appendRow([date, data.amount, poolLabel, '']);
+  if (sheet.getLastRow() > 2) sheet.getRange(2, 1, sheet.getLastRow() - 1, 4).sort({ column: 1, ascending: true });
+  return jsonResponse({ status: 'success', message: '紀錄已新增' });
+}
+
+function deleteDeposit(data) {
+  const sheet = getOrCreateSheet();
+  const lastRow = sheet.getLastRow();
+  const poolLabel = data.pool === 'double' ? '雙倍' : '正常';
+  if (lastRow <= 1) return jsonResponse({ status: 'error', message: '無紀錄可刪除' });
+  const values = sheet.getRange(2, 1, lastRow - 1, 3).getValues();
+  for (let i = values.length - 1; i >= 0; i--) {
+    if (Number(values[i][1]) === Number(data.amount) && values[i][2] === poolLabel) {
+      sheet.deleteRow(i + 2); return jsonResponse({ status: 'success', message: '紀錄已刪除' });
+    }
+  }
+  return jsonResponse({ status: 'error', message: '找不到紀錄' });
+}
+
+function formatDateValue(val) {
+  if (val instanceof Date) {
+    const y = val.getFullYear(), m = String(val.getMonth() + 1).padStart(2, '0'), d = String(val.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+  return String(val);
+}
+
+function jsonResponse(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
+}</code></pre>
     </div>
   </div>
 
@@ -178,56 +309,7 @@
     </div>
   </div>
 
-  <!-- ===== Help Modal ===== -->
-  <div class="modal-overlay" id="helpModal">
-    <div class="modal-content" style="padding: 0; overflow: hidden; background: var(--bg-primary); max-width: 400px; width: 90%;">
-      <div id="sliderContainer" style="display: flex; transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1); width: 400%;">
-        
-        <!-- Slide 1 -->
-        <div style="width: 25%; text-align: center; padding: 32px 24px 16px;">
-          <img src="assets/step1.png" alt="選擇模式" style="width: 100%; max-width: 240px; border-radius: 20px; margin-bottom: 24px; box-shadow: 0 12px 32px rgba(124,106,255,0.25);">
-          <h3 style="color: var(--text-primary); margin-bottom: 12px; font-size: 1.3rem;">1. 選擇適合的模式</h3>
-          <p style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.6;">前往「設定」頁面挑選挑戰模式。<br>共有經典 365、加壓雙倍、或是自訂金額的定期定額模式可以選擇！</p>
-        </div>
 
-        <!-- Slide 2 -->
-        <div style="width: 25%; text-align: center; padding: 32px 24px 16px;">
-          <img src="assets/step2.png" alt="每日存錢" style="width: 100%; max-width: 240px; border-radius: 20px; margin-bottom: 24px; box-shadow: 0 12px 32px rgba(124,106,255,0.25);">
-          <h3 style="color: var(--text-primary); margin-bottom: 12px; font-size: 1.3rem;">2. 每日存錢與抽籤</h3>
-          <p style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.6;">切換到「存款」頁面手動點擊方塊，<br>或是使用「🎲幫我決定」讓系統為你隨機抽一個幸運數字！</p>
-        </div>
-
-        <!-- Slide 3 -->
-        <div style="width: 25%; text-align: center; padding: 32px 24px 16px;">
-          <img src="assets/step3.png" alt="進度與成就" style="width: 100%; max-width: 240px; border-radius: 20px; margin-bottom: 24px; box-shadow: 0 12px 32px rgba(124,106,255,0.25);">
-          <h3 style="color: var(--text-primary); margin-bottom: 12px; font-size: 1.3rem;">3. 查看進度與成就</h3>
-          <p style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.6;">在「首頁」隨時掌握存款總額與剩餘目標。<br>當你達成特定天數時，還會解鎖專屬成就徽章 🏆！</p>
-        </div>
-
-        <!-- Slide 4 -->
-        <div style="width: 25%; text-align: center; padding: 32px 24px 16px;">
-          <img src="assets/step4.png" alt="雲端備份" style="width: 100%; max-width: 240px; border-radius: 20px; margin-bottom: 24px; box-shadow: 0 12px 32px rgba(124,106,255,0.25);">
-          <h3 style="color: var(--text-primary); margin-bottom: 12px; font-size: 1.3rem;">4. 雲端資料同步</h3>
-          <p style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.6;">預設資料僅存在手機。<br>若怕遺失，可至設定綁定 Google Apps Script API，即可自動備份到雲端試算表。</p>
-        </div>
-        
-      </div>
-      
-      <!-- Controls -->
-      <div style="padding: 0 24px 24px;">
-        <div style="display: flex; justify-content: center; gap: 8px; margin-bottom: 28px;" id="sliderDots">
-          <div style="width: 8px; height: 8px; border-radius: 4px; background: var(--accent-purple); transition: 0.3s;"></div>
-          <div style="width: 8px; height: 8px; border-radius: 4px; background: var(--bg-secondary); transition: 0.3s;"></div>
-          <div style="width: 8px; height: 8px; border-radius: 4px; background: var(--bg-secondary); transition: 0.3s;"></div>
-          <div style="width: 8px; height: 8px; border-radius: 4px; background: var(--bg-secondary); transition: 0.3s;"></div>
-        </div>
-        <div style="display: flex; gap: 12px;">
-          <button class="btn btn-outline" id="sliderSkipBtn" onclick="closeHelpModal()" style="flex: 1; border-color: var(--border); color: var(--text-secondary);">略過</button>
-          <button class="btn btn-primary" id="sliderNextBtn" onclick="nextSlide()" style="flex: 2; box-shadow: 0 4px 15px rgba(124,106,255,0.3);">下一步</button>
-        </div>
-      </div>
-    </div>
-  </div>
 
   <!-- ===== Toast ===== -->
   <div class="toast" id="toast"></div>
@@ -247,6 +329,12 @@
       <span>存款</span>
     </button>
 
+    <button class="nav-item" data-tab="guide" onclick="switchTab('guide')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+      </svg>
+      <span>教學</span>
+    </button>
     <button class="nav-item" data-tab="settings" onclick="switchTab('settings')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
