@@ -281,6 +281,14 @@ body::before {
   background: rgba(78,205,196,0.05);
   border-color: rgba(78,205,196,0.15);
 }
+.amount-cell.highlight-random {
+  transform: scale(1.15);
+  background: var(--accent-purple);
+  color: white;
+  border-color: white;
+  box-shadow: 0 0 15px rgba(124,106,255,0.6);
+  z-index: 10;
+}
 
 /* ===== History Tab ===== */
 .history-summary {

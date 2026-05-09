@@ -281,6 +281,7 @@ function confirmDeposit() {
   saveToStorage();
   closeModal();
   renderAll();
+  playSound('coin');
   showToast(`✅ 已存入 ${formatNumber(amount)} 元！`, 'success');
 
   // Sync to Google Sheets
@@ -451,7 +452,10 @@ function checkBadges() {
     if (b.check(total, count) && !state.earnedBadges.includes(b.id)) {
       state.earnedBadges.push(b.id);
       newEarned = true;
-      setTimeout(() => fireConfetti(), 500);
+      setTimeout(() => {
+        fireConfetti();
+        playSound('badge');
+      }, 500);
       showToast(`🏆 恭喜解鎖成就：${b.name}`, 'success');
     }
   });
@@ -510,4 +514,85 @@ function toggleTheme() {
   
   const btn = document.getElementById('themeToggleBtn');
   if (btn) btn.textContent = next === 'light' ? '🌙' : '🌞';
+}
+
+// ===== Audio =====
+let audioCtx;
+function initAudio() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+}
+
+function playTone(freq, type, duration) {
+  if (!audioCtx) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+  
+  gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+  
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start();
+  osc.stop(audioCtx.currentTime + duration);
+}
+
+function playSound(type) {
+  try {
+    initAudio();
+    if (type === 'coin') {
+      playTone(1200, 'sine', 0.1);
+      setTimeout(() => playTone(1600, 'sine', 0.2), 100);
+    } else if (type === 'badge') {
+      playTone(523.25, 'sine', 0.1); // C5
+      setTimeout(() => playTone(659.25, 'sine', 0.1), 100); // E5
+      setTimeout(() => playTone(783.99, 'sine', 0.3), 200); // G5
+    }
+  } catch (e) { console.warn("Audio not supported", e); }
+}
+
+// ===== Random Picker =====
+function pickRandomAmount() {
+  const grid = document.getElementById('amountGrid');
+  const cells = grid.querySelectorAll('.amount-cell');
+  
+  if (cells.length === 0) {
+    showToast('🎉 所有金額都存完了！', 'success');
+    return;
+  }
+
+  let spins = 0;
+  const maxSpins = 15;
+  const interval = 80;
+  initAudio();
+  
+  const timer = setInterval(() => {
+    cells.forEach(c => c.classList.remove('highlight-random'));
+    const randomCell = cells[Math.floor(Math.random() * cells.length)];
+    randomCell.classList.add('highlight-random');
+    playTone(800, 'sine', 0.05);
+    
+    spins++;
+    if (spins >= maxSpins) {
+      clearInterval(timer);
+      cells.forEach(c => c.classList.remove('highlight-random'));
+      
+      const finalCell = cells[Math.floor(Math.random() * cells.length)];
+      finalCell.classList.add('highlight-random');
+      setTimeout(() => finalCell.classList.remove('highlight-random'), 1500);
+      
+      playTone(1200, 'triangle', 0.15);
+      
+      const amount = parseInt(finalCell.textContent);
+      const pool = finalCell.classList.contains('double-cell') ? 'double' : 'normal';
+      
+      setTimeout(() => selectAmount(amount, pool), 400);
+    }
+  }, interval);
 }
