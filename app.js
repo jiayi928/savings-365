@@ -2,7 +2,7 @@
 const state = {
   deposits: [],        // [{ amount, pool, date, timestamp }]
   startDate: '',
-  scriptUrl: '',
+  scriptUrl: 'https://script.google.com/macros/s/AKfycbxQ06U4KRDbEgf-xTszktB-mrJRpv6dAlBaQYZDJIb9xo6u2bkAuMEiG4Rf5UTcKJys/exec',
   sheetUrl: '',
   currentPool: 'double',
   currentTab: 'home',
@@ -52,36 +52,24 @@ function loadFromStorage() {
     }
 
     state.startDate = localStorage.getItem('startDate') || '';
-    state.scriptUrl = localStorage.getItem('scriptUrl') || '';
     state.sheetUrl = localStorage.getItem('sheetUrl') || '';
   } catch (e) {
     state.deposits = [];
   }
   // Populate settings inputs
   const dateInput = document.getElementById('startDateInput');
-  const urlInput = document.getElementById('scriptUrlInput');
   const sheetInput = document.getElementById('sheetUrlInput');
   if (dateInput) dateInput.value = state.startDate;
-  if (urlInput) urlInput.value = state.scriptUrl;
   if (sheetInput) sheetInput.value = state.sheetUrl;
 }
 
 function saveToStorage() {
   localStorage.setItem('deposits', JSON.stringify(state.deposits));
   localStorage.setItem('startDate', state.startDate);
-  localStorage.setItem('scriptUrl', state.scriptUrl);
   localStorage.setItem('sheetUrl', state.sheetUrl);
 }
 
 // ===== Helpers =====
-function getCurrentDay() {
-  if (!state.startDate) return 0;
-  const start = new Date(state.startDate + 'T00:00:00');
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const diff = Math.floor((today - start) / 86400000);
-  return Math.max(0, diff + 1);
-}
 
 function getUsedAmounts(pool) {
   return new Set(state.deposits.filter(d => d.pool === pool).map(d => d.amount));
@@ -128,7 +116,6 @@ function renderHome() {
   const totalSaved = getTotalSaved();
   const doubleUsed = getUsedAmounts('double');
   const normalUsed = getUsedAmounts('normal');
-  const currentDay = getCurrentDay();
 
   // Progress ring
   const circumference = 2 * Math.PI * 68; // ~427.26
@@ -142,38 +129,6 @@ function renderHome() {
   document.getElementById('targetAmount').textContent = formatNumber(TARGET_AMOUNT);
   document.getElementById('doubleCompleted').textContent = `${doubleUsed.size} / 180`;
   document.getElementById('normalCompleted').textContent = `${normalUsed.size} / 185`;
-
-  // Today card
-  const todayDayNum = document.getElementById('todayDayNum');
-  const todayBadge = document.getElementById('todayBadge');
-  const todayDesc = document.getElementById('todayDesc');
-  const todayBehind = document.getElementById('todayBehind');
-
-  if (currentDay > 0) {
-    todayDayNum.textContent = currentDay;
-    const isDouble = currentDay <= 180;
-    todayBadge.className = 'day-badge ' + (isDouble ? 'double' : 'normal');
-    todayDesc.textContent = `第 ${currentDay} 天（${isDouble ? '雙倍期' : '正常期'}）`;
-
-    const behind = currentDay - completed;
-    if (behind > 0) {
-      todayBehind.style.display = 'block';
-      todayBehind.className = 'behind';
-      todayBehind.textContent = `⚠️ 落後 ${behind} 天`;
-    } else if (behind < 0) {
-      todayBehind.style.display = 'block';
-      todayBehind.className = 'ahead';
-      todayBehind.textContent = `🎉 超前 ${Math.abs(behind)} 天`;
-    } else {
-      todayBehind.style.display = 'block';
-      todayBehind.className = 'ahead';
-      todayBehind.textContent = '✅ 進度完美！';
-    }
-  } else {
-    todayDayNum.textContent = '-';
-    todayDesc.textContent = '請在設定中設定開始日期';
-    todayBehind.style.display = 'none';
-  }
 }
 
 // ===== Deposit Grid =====
@@ -314,7 +269,6 @@ function switchTab(tab) {
 // ===== Settings =====
 function saveSettings() {
   state.startDate = document.getElementById('startDateInput').value;
-  state.scriptUrl = document.getElementById('scriptUrlInput').value.trim();
   state.sheetUrl = document.getElementById('sheetUrlInput').value.trim();
   saveToStorage();
   renderAll();
