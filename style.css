@@ -271,15 +271,15 @@ body::before {
   -webkit-user-select: none;
 }
 .amount-cell:active { transform: scale(0.93); }
-.amount-cell.completed {
-  background: var(--completed-bg);
-  border-color: rgba(34,197,94,0.3);
-  color: var(--completed);
+.amount-cell.double-cell {
+  color: var(--double-color);
+  background: rgba(246,166,35,0.05);
+  border-color: rgba(246,166,35,0.15);
 }
-.amount-cell.completed::after {
-  content: '✓'; position: absolute;
-  top: 2px; right: 4px;
-  font-size: 0.55rem; opacity: 0.7;
+.amount-cell.normal-cell {
+  color: var(--normal-color);
+  background: rgba(78,205,196,0.05);
+  border-color: rgba(78,205,196,0.15);
 }
 
 /* ===== History Tab ===== */

@@ -146,35 +146,33 @@ function renderHome() {
 }
 
 // ===== Deposit Grid =====
-function switchPool(pool) {
-  state.currentPool = pool;
-  document.getElementById('tabDouble').classList.toggle('active', pool === 'double');
-  document.getElementById('tabNormal').classList.toggle('active', pool === 'normal');
-  renderGrid();
-}
-
 function renderGrid() {
-  const pool = state.currentPool;
-  const amounts = getPoolAmounts(pool);
-  const used = getUsedAmounts(pool);
+  const ALL_AMOUNTS = [
+    ...DOUBLE_POOL.map(a => ({ amount: a, pool: 'double' })),
+    ...NORMAL_POOL.map(a => ({ amount: a, pool: 'normal' }))
+  ].sort((a, b) => a.amount - b.amount);
+
+  let available = [...ALL_AMOUNTS];
+  for (const d of state.deposits) {
+    const idx = available.findIndex(a => a.amount === d.amount && a.pool === d.pool);
+    if (idx !== -1) available.splice(idx, 1);
+  }
+
   const grid = document.getElementById('amountGrid');
-  const poolTotal = getPoolTotal(pool);
-  const poolTarget = amounts.reduce((a, b) => a + b, 0);
 
   // Pool info
   document.getElementById('poolProgress').textContent =
-    `已選 ${used.size} / ${amounts.length}`;
+    `剩餘 ${available.length} 個金額`;
+  const remainingTotal = available.reduce((sum, item) => sum + item.amount, 0);
   document.getElementById('poolSubtotal').textContent =
-    `小計：${formatNumber(poolTotal)} 元`;
+    `未存總額：${formatNumber(remainingTotal)} 元`;
 
   // Build grid
   let html = '';
-  amounts.forEach(amount => {
-    const isCompleted = used.has(amount);
-    html += `<div class="amount-cell${isCompleted ? ' completed' : ''}"
-      onclick="${isCompleted ? '' : `selectAmount(${amount},'${pool}')`}"
-      ${isCompleted ? 'style="pointer-events:none"' : ''}>
-      ${amount}
+  available.forEach(item => {
+    html += `<div class="amount-cell ${item.pool}-cell"
+      onclick="selectAmount(${item.amount},'${item.pool}')">
+      ${item.amount}
     </div>`;
   });
   grid.innerHTML = html;
