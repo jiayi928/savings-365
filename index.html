@@ -12,15 +12,19 @@
   <link rel="apple-touch-icon" href="icon-512.png">
   <link rel="icon" type="image/png" href="icon-512.png">
   <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
 <body>
 
   <!-- Top Bar -->
   <header class="top-bar">
     <h1>💰 365 存款挑戰</h1>
-    <button class="sync-btn" id="syncBtn" onclick="syncWithSheets()">
-      <span id="syncText">同步</span>
-    </button>
+    <div style="display: flex; gap: 8px;">
+      <button class="theme-toggle" id="themeToggleBtn" onclick="toggleTheme()" title="切換主題">🌞</button>
+      <button class="sync-btn" id="syncBtn" onclick="syncWithSheets()">
+        <span id="syncText">同步</span>
+      </button>
+    </div>
   </header>
 
   <!-- ===== Home Tab ===== -->
@@ -74,6 +78,11 @@
         <div class="desc" id="todayDesc">第 1 天（雙倍期）</div>
         <div class="behind" id="todayBehind" style="display:none"></div>
       </div>
+    </div>
+
+    <div class="card badges-card" style="margin-top: 12px; padding: 16px;">
+      <h3 style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 12px;">🏆 你的成就</h3>
+      <div class="badges-grid" id="badgesGrid"></div>
     </div>
 
     <h3 style="margin: 20px 0 10px; font-size: 1.1rem; padding-left: 4px;">存款紀錄</h3>

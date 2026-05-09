@@ -1,6 +1,12 @@
+const savedTheme = localStorage.getItem('theme') || 'dark';
+if (savedTheme === 'light') {
+  document.documentElement.setAttribute('data-theme', 'light');
+}
+
 // ===== State =====
 const state = {
   deposits: [],        // [{ amount, pool, date, timestamp }]
+  earnedBadges: [],
   startDate: '',
   scriptUrl: 'https://script.google.com/macros/s/AKfycbxQ06U4KRDbEgf-xTszktB-mrJRpv6dAlBaQYZDJIb9xo6u2bkAuMEiG4Rf5UTcKJys/exec',
   sheetUrl: '',
@@ -14,6 +20,15 @@ const state = {
 const DOUBLE_POOL = Array.from({ length: 180 }, (_, i) => (i + 1) * 2); // 2,4,...,360
 const NORMAL_POOL = Array.from({ length: 185 }, (_, i) => i + 181);     // 181,...,365
 const TARGET_AMOUNT = DOUBLE_POOL.reduce((a, b) => a + b, 0) + NORMAL_POOL.reduce((a, b) => a + b, 0); // 83,085
+
+const BADGES = [
+  { id: 'first_blood', name: '首存達成', icon: '🌱', check: (total, count) => count >= 1 },
+  { id: '10k', name: '破萬富翁', icon: '💸', check: (total, count) => total >= 10000 },
+  { id: '50_days', name: '存滿50天', icon: '🔥', check: (total, count) => count >= 50 },
+  { id: '50k', name: '五萬里程', icon: '💎', check: (total, count) => total >= 50000 },
+  { id: '100_days', name: '百日戰士', icon: '👑', check: (total, count) => count >= 100 },
+  { id: 'all_clear', name: '365制霸', icon: '🚀', check: (total, count) => count >= 365 }
+];
 
 // ===== Init =====
 document.addEventListener('DOMContentLoaded', () => {
@@ -53,8 +68,10 @@ function loadFromStorage() {
 
     state.startDate = localStorage.getItem('startDate') || '';
     state.sheetUrl = localStorage.getItem('sheetUrl') || '';
+    state.earnedBadges = JSON.parse(localStorage.getItem('earnedBadges') || '[]');
   } catch (e) {
     state.deposits = [];
+    state.earnedBadges = [];
   }
   // Populate settings inputs
   const dateInput = document.getElementById('startDateInput');
@@ -170,6 +187,9 @@ function renderHome() {
     todayDesc.textContent = '請在設定中設定開始日期';
     todayBehind.style.display = 'none';
   }
+
+  checkBadges();
+  renderBadges();
 
   // History list in Home
   const list = document.getElementById('historyList');
@@ -419,4 +439,75 @@ async function syncDelete(deposit) {
   } catch (e) {
     console.warn('Sync delete failed:', e);
   }
+}
+
+// ===== Badges & Confetti =====
+function checkBadges() {
+  const total = getTotalSaved();
+  const count = state.deposits.length;
+  let newEarned = false;
+
+  BADGES.forEach(b => {
+    if (b.check(total, count) && !state.earnedBadges.includes(b.id)) {
+      state.earnedBadges.push(b.id);
+      newEarned = true;
+      setTimeout(() => fireConfetti(), 500);
+      showToast(`🏆 恭喜解鎖成就：${b.name}`, 'success');
+    }
+  });
+
+  if (newEarned) {
+    localStorage.setItem('earnedBadges', JSON.stringify(state.earnedBadges));
+  }
+}
+
+function renderBadges() {
+  const container = document.getElementById('badgesGrid');
+  if (!container) return;
+  const total = getTotalSaved();
+  const count = state.deposits.length;
+
+  let html = '';
+  BADGES.forEach(b => {
+    const isEarned = b.check(total, count);
+    html += `
+      <div class="badge-item ${isEarned ? 'earned' : ''}">
+        <div class="badge-icon">${b.icon}</div>
+        <div class="badge-name">${b.name}</div>
+      </div>
+    `;
+  });
+  container.innerHTML = html;
+}
+
+function fireConfetti() {
+  if (typeof confetti !== 'function') return;
+  const duration = 3000;
+  const end = Date.now() + duration;
+
+  (function frame() {
+    confetti({
+      particleCount: 5, angle: 60, spread: 55, origin: { x: 0 },
+      colors: ['#7c6aff', '#4fc3f7', '#f6a623']
+    });
+    confetti({
+      particleCount: 5, angle: 120, spread: 55, origin: { x: 1 },
+      colors: ['#7c6aff', '#4fc3f7', '#f6a623']
+    });
+
+    if (Date.now() < end) {
+      requestAnimationFrame(frame);
+    }
+  }());
+}
+
+// ===== Theme Toggle =====
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'dark';
+  const next = current === 'light' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('theme', next);
+  
+  const btn = document.getElementById('themeToggleBtn');
+  if (btn) btn.textContent = next === 'light' ? '🌙' : '🌞';
 }

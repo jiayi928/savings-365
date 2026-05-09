@@ -1,4 +1,4 @@
-const CACHE_NAME = 'savings365-v6';
+const CACHE_NAME = 'savings365-v7';
 const ASSETS = [
   './',
   './index.html',
