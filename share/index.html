@@ -180,32 +180,67 @@
 
   <!-- ===== Help Modal ===== -->
   <div class="modal-overlay" id="helpModal">
-    <div class="modal-content" style="text-align: left; max-height: 80vh; overflow-y: auto;">
-      <h3 style="margin-bottom: 16px; color: var(--accent-blue); text-align: center;">📖 使用說明</h3>
+    <div class="modal-content" style="text-align: left; max-height: 85vh; overflow-y: auto; padding: 24px 16px;">
+      <h3 style="margin-bottom: 20px; color: var(--accent-blue); text-align: center; font-size: 1.3rem;">📖 圖文使用教學</h3>
       
-      <h4 style="color: var(--accent-purple); margin-top: 12px;">🎯 基本玩法</h4>
-      <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 8px; line-height: 1.5;">
-        1. 到「設定」選擇你的挑戰模式與開始日期。<br>
-        2. 每天到「存款」頁面，手動點選一個金額，或是按「🎲 幫我決定」讓輪盤挑選。<br>
-        3. 確認存入後，系統會自動記錄進度並頒發成就徽章！
-      </p>
+      <div style="display: flex; gap: 12px; margin-bottom: 16px; align-items: flex-start; background: var(--bg-secondary); padding: 12px; border-radius: 12px;">
+        <div style="flex-shrink: 0;">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+            <rect x="4" y="14" width="40" height="20" rx="4" fill="var(--bg-primary)" stroke="var(--accent-blue)" stroke-width="2"/>
+            <path d="M34 22L38 26L42 22" stroke="var(--accent-blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="16" cy="24" r="4" fill="var(--accent-purple)"/>
+          </svg>
+        </div>
+        <div>
+          <h4 style="color: var(--text-primary); margin: 0 0 4px 0; font-size: 1rem;">1. 選擇適合的模式</h4>
+          <p style="color: var(--text-secondary); margin: 0; font-size: 0.85rem; line-height: 1.5;">前往「設定」頁面挑選挑戰模式。共有經典 365、雙倍、或是自訂金額的定期定額模式可以選擇！</p>
+        </div>
+      </div>
 
-      <h4 style="color: var(--accent-purple); margin-top: 12px;">🎮 挑戰模式介紹</h4>
-      <ul style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 8px; padding-left: 20px; line-height: 1.5;">
-        <li><b>正常 365：</b> 第1天存1元，第365天存365元。</li>
-        <li><b>雙倍 365：</b> 傳統版的兩倍難度 (2, 4, 6...)。</li>
-        <li><b>混合加壓版：</b> 前180天雙倍，後185天正常。</li>
-        <li><b>定期定額：</b> 每天存入固定的自訂金額。</li>
-      </ul>
+      <div style="display: flex; gap: 12px; margin-bottom: 16px; align-items: flex-start; background: var(--bg-secondary); padding: 12px; border-radius: 12px;">
+        <div style="flex-shrink: 0;">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+            <rect x="4" y="4" width="18" height="18" rx="4" fill="var(--bg-primary)" stroke="var(--accent-blue)" stroke-width="2"/>
+            <rect x="26" y="4" width="18" height="18" rx="4" fill="var(--accent-purple)"/>
+            <rect x="4" y="26" width="18" height="18" rx="4" fill="var(--bg-primary)" stroke="var(--accent-blue)" stroke-width="2"/>
+            <text x="35" y="17" fill="white" font-size="12" font-weight="bold" text-anchor="middle">✓</text>
+            <text x="35" y="40" fill="var(--text-primary)" font-size="16" text-anchor="middle">🎲</text>
+          </svg>
+        </div>
+        <div>
+          <h4 style="color: var(--text-primary); margin: 0 0 4px 0; font-size: 1rem;">2. 每日存錢與抽籤</h4>
+          <p style="color: var(--text-secondary); margin: 0; font-size: 0.85rem; line-height: 1.5;">切換到「存款」頁面，你可以點擊方塊手動選擇想存的金額，或是點擊「🎲 幫我決定」讓系統為你隨機抽一個數字！</p>
+        </div>
+      </div>
 
-      <h4 style="color: var(--accent-purple); margin-top: 12px;">☁️ 資料儲存與同步</h4>
-      <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 8px; line-height: 1.5;">
-        預設情況下，所有紀錄都<b>只會儲存在你的手機裡</b>，換手機或清除瀏覽器資料就會消失。<br><br>
-        若想永久保存，可使用<b>進階同步功能</b>：<br>
-        前往 Google 試算表建立一個檔案，透過 Apps Script 部署 API 後，將網址貼到設定的「資料同步後端網址」。
-      </p>
+      <div style="display: flex; gap: 12px; margin-bottom: 16px; align-items: flex-start; background: var(--bg-secondary); padding: 12px; border-radius: 12px;">
+        <div style="flex-shrink: 0;">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+            <circle cx="24" cy="24" r="18" stroke="var(--bg-primary)" stroke-width="4"/>
+            <path d="M24 6 A18 18 0 0 1 42 24" stroke="var(--accent-purple)" stroke-width="4" stroke-linecap="round"/>
+            <text x="24" y="28" fill="var(--text-primary)" font-size="12" font-weight="bold" text-anchor="middle">50%</text>
+          </svg>
+        </div>
+        <div>
+          <h4 style="color: var(--text-primary); margin: 0 0 4px 0; font-size: 1rem;">3. 查看進度與成就</h4>
+          <p style="color: var(--text-secondary); margin: 0; font-size: 0.85rem; line-height: 1.5;">在「首頁」隨時掌握你的存款總額與剩餘目標。當你達成特定天數或金額時，還會解鎖專屬的徽章成就 🏆！</p>
+        </div>
+      </div>
 
-      <button class="btn btn-primary" onclick="closeHelpModal()" style="width:100%; margin-top: 20px;">我了解了</button>
+      <div style="display: flex; gap: 12px; margin-bottom: 16px; align-items: flex-start; background: var(--bg-secondary); padding: 12px; border-radius: 12px;">
+        <div style="flex-shrink: 0;">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+            <path d="M14 34C9.58172 34 6 30.4183 6 26C6 21.5817 9.58172 18 14 18C15.3857 12.3396 20.2525 8 26 8C32.6274 8 38 13.3726 38 20C41.3137 20 44 22.6863 44 26C44 29.3137 41.3137 32 38 32" stroke="var(--accent-blue)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M26 18V38M26 38L20 32M26 38L32 32" stroke="var(--accent-purple)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div>
+          <h4 style="color: var(--text-primary); margin: 0 0 4px 0; font-size: 1rem;">4. 雲端資料同步 (進階)</h4>
+          <p style="color: var(--text-secondary); margin: 0; font-size: 0.85rem; line-height: 1.5;">預設資料僅存在手機中。若怕遺失，可至設定綁定 Apps Script 網址，每次存錢就會自動備份到雲端試算表。</p>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" onclick="closeHelpModal()" style="width:100%; margin-top: 8px;">我完全了解了！</button>
     </div>
   </div>
 
