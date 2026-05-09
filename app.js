@@ -24,6 +24,32 @@ document.addEventListener('DOMContentLoaded', () => {
 function loadFromStorage() {
   try {
     state.deposits = JSON.parse(localStorage.getItem('deposits') || '[]');
+    
+    // 自動匯入舊截圖紀錄 (一次性)
+    if (!localStorage.getItem('legacy_imported_v2')) {
+      const legacyDouble = [2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,34,36,38,40,42,44,46,48,50,52,54,56,58,60,62,64,66,68,70,72,74,76,78,80,82,84,86,88,90,92,94,96,98,100,102,104,106,108,110,112,114,116,118,120,122,124,126,128,130,132,134,136,138,140,142,144,146,148,150,152,154,156,158,160,162, 184, 200, 218, 222, 250, 258, 270, 300, 302, 304, 306, 310, 314, 320, 330, 360];
+      const legacyNormal = [237, 303, 305, 320, 355, 361, 362, 363, 364, 365];
+      const now = Date.now();
+      const todayDate = new Date().toISOString().split('T')[0];
+      let imported = false;
+      
+      legacyDouble.forEach(amt => {
+        if (!state.deposits.find(d => d.amount === amt && d.pool === 'double')) {
+          state.deposits.push({ amount: amt, pool: 'double', date: todayDate, timestamp: now });
+          imported = true;
+        }
+      });
+      legacyNormal.forEach(amt => {
+        if (!state.deposits.find(d => d.amount === amt && d.pool === 'normal')) {
+          state.deposits.push({ amount: amt, pool: 'normal', date: todayDate, timestamp: now });
+          imported = true;
+        }
+      });
+      
+      if (imported) localStorage.setItem('deposits', JSON.stringify(state.deposits));
+      localStorage.setItem('legacy_imported_v2', 'true');
+    }
+
     state.startDate = localStorage.getItem('startDate') || '';
     state.scriptUrl = localStorage.getItem('scriptUrl') || '';
   } catch (e) {
@@ -298,21 +324,7 @@ function confirmReset() {
   showToast('資料已重置', 'error');
 }
 
-function exportData() {
-  const data = {
-    startDate: state.startDate,
-    deposits: state.deposits,
-    exportDate: new Date().toISOString()
-  };
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `savings-365-${new Date().toISOString().split('T')[0]}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
-  showToast('✅ 資料已匯出', 'success');
-}
+
 
 // ===== Copy Apps Script =====
 async function copyAppsScript() {
