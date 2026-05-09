@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0b0b1a">
+  <meta name="description" content="365天存款挑戰紀錄器 - 追蹤你的每日存款進度，連接Google試算表同步資料">
+  <title>365 存款挑戰</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-512.png">
+  <link rel="icon" type="image/png" href="icon-512.png">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+</head>
+<body>
+
+  <!-- Top Bar -->
+  <header class="top-bar">
+    <h1>💰 365 存款挑戰</h1>
+    <div style="display: flex; gap: 8px;">
+      <button class="theme-toggle" id="themeToggleBtn" onclick="toggleTheme()" title="切換主題">🌞</button>
+      <button class="sync-btn" id="syncBtn" onclick="syncWithSheets()">
+        <span id="syncText">同步</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ===== Home Tab ===== -->
+  <div class="tab-page active" id="page-home">
+    <div class="card hero-card">
+      <div class="progress-ring-container">
+        <svg class="progress-ring" width="160" height="160" viewBox="0 0 160 160">
+          <defs>
+            <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="var(--accent-purple)"/>
+              <stop offset="100%" stop-color="var(--accent-blue)"/>
+            </linearGradient>
+          </defs>
+          <circle class="progress-ring-bg" cx="80" cy="80" r="68"/>
+          <circle class="progress-ring-fill" id="progressRing" cx="80" cy="80" r="68"
+            stroke-dasharray="427.26" stroke-dashoffset="427.26"/>
+        </svg>
+        <div class="progress-center">
+          <div class="big-num" id="completedCount">0</div>
+          <div class="sub">/ 365 天</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="label">已存金額</div>
+        <div class="value gold" id="totalSaved">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">目標金額</div>
+        <div class="value blue" id="targetAmount">83,085</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">剩餘金額</div>
+        <div class="value red" id="remainingAmount">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">剩餘天數</div>
+        <div class="value green" id="remainingDays">365</div>
+      </div>
+    </div>
+
+    <div class="card today-card" id="todayCard">
+      <div class="day-badge double" id="todayBadge">
+        <div class="day-num" id="todayDayNum">1</div>
+        <div class="day-label">天</div>
+      </div>
+      <div class="today-info">
+        <div class="title">今日應存天數</div>
+        <div class="desc" id="todayDesc">第 1 天（雙倍期）</div>
+        <div class="behind" id="todayBehind" style="display:none"></div>
+      </div>
+    </div>
+
+    <div class="card badges-card" style="margin-top: 12px; padding: 16px;">
+      <h3 style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 12px;">🏆 你的成就</h3>
+      <div class="badges-grid" id="badgesGrid"></div>
+    </div>
+
+    <h3 style="margin: 20px 0 10px; font-size: 1.1rem; padding-left: 4px;">存款紀錄</h3>
+    <div class="history-list" id="historyList">
+      <div class="empty-state">
+        <div class="icon">📋</div>
+        <div>尚無存款紀錄</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Deposit Tab ===== -->
+  <div class="tab-page" id="page-deposit">
+    <div class="pool-info" style="margin-top: 8px; padding-bottom: 12px; border-bottom: 1px solid var(--border); margin-bottom: 16px;">
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <span id="poolProgress" style="font-weight: 600; color: var(--text-primary);">剩餘 365 個金額</span>
+        <span id="poolSubtotal">未存總額：0 元</span>
+      </div>
+      <button class="btn btn-primary" onclick="pickRandomAmount()" style="width: auto; padding: 8px 16px; font-size: 0.8rem; border-radius: 20px; box-shadow: 0 4px 10px rgba(124,106,255,0.3);">🎲 幫我決定</button>
+    </div>
+    <div class="amount-grid" id="amountGrid"></div>
+  </div>
+
+
+
+  <!-- ===== Settings Tab ===== -->
+  <div class="tab-page" id="page-settings">
+    <div class="card">
+      <div class="setting-group">
+        <label for="startDateInput">挑戰開始日期</label>
+        <input type="date" id="startDateInput">
+      </div>
+      <div class="setting-group">
+        <label for="modeSelect">挑戰模式 (變更會重置紀錄)</label>
+        <select id="modeSelect" style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg-primary); color: var(--text-primary); font-size: 1rem;">
+          <option value="classic">經典階梯 (1~365元) - 目標 $66,795</option>
+          <option value="half_double">加壓雙倍 (目前版本) - 目標 $83,085</option>
+          <option value="fixed_100">每日定額 100元 - 目標 $36,500</option>
+          <option value="fixed_50">每日定額 50元 - 目標 $18,250</option>
+        </select>
+      </div>
+      <div class="setting-group">
+        <label for="sheetUrlInput">Google 試算表連結 (可選)</label>
+        <div style="display: flex; gap: 8px;">
+          <input type="url" id="sheetUrlInput" placeholder="https://docs.google.com/spreadsheets/..." style="flex:1;">
+          <button class="btn btn-outline" onclick="openSheet()" style="white-space: nowrap; padding: 0 12px; font-size: 0.9rem;">開啟試算表</button>
+        </div>
+      </div>
+      <div class="setting-group">
+        <label for="backendUrlInput">資料同步後端 (進階使用者選項)</label>
+        <input type="url" id="backendUrlInput" placeholder="留空白表示僅存於手機內">
+      </div>
+      <button class="btn btn-primary" onclick="saveSettings()" style="margin-top:8px">儲存設定</button>
+
+      <div style="margin-top:12px">
+        <button class="btn btn-danger" onclick="confirmReset()" style="width:100%">重置資料</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Confirm Modal ===== -->
+  <div class="modal-overlay" id="confirmModal">
+    <div class="modal-content">
+      <h3>確認存款</h3>
+      <div class="modal-amount">
+        <div><span class="big" id="modalAmount">0</span> <span class="unit">元</span></div>
+        <div class="tag double" id="modalTag">雙倍區</div>
+      </div>
+      <div class="modal-buttons">
+        <button class="btn btn-outline" onclick="closeModal()">取消</button>
+        <button class="btn btn-primary" id="modalConfirmBtn" onclick="confirmDeposit()">確認存入</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Toast ===== -->
+  <div class="toast" id="toast"></div>
+
+  <!-- ===== Bottom Nav ===== -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" data-tab="home" onclick="switchTab('home')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+      </svg>
+      <span>首頁</span>
+    </button>
+    <button class="nav-item" data-tab="deposit" onclick="switchTab('deposit')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+      </svg>
+      <span>存款</span>
+    </button>
+
+    <button class="nav-item" data-tab="settings" onclick="switchTab('settings')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+      <span>設定</span>
+    </button>
+  </nav>
+
+  <script src="app.js"></script>
+  <script>
+    // Register Service Worker for PWA
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js')
+        .then(reg => console.log('SW registered:', reg.scope))
+        .catch(err => console.warn('SW registration failed:', err));
+    }
+  </script>
+</body>
+</html>
