@@ -76,18 +76,15 @@ function loadFromStorage() {
   }
   // Populate settings inputs
   const dateInput = document.getElementById('startDateInput');
-  const sheetInput = document.getElementById('sheetUrlInput');
   const modeInput = document.getElementById('modeSelect');
   const customAmountInput = document.getElementById('customAmountInput');
-  const scriptInput = document.getElementById('backendUrlInput');
   
   if (dateInput) dateInput.value = state.startDate;
-  if (sheetInput) sheetInput.value = state.sheetUrl;
   if (modeInput) modeInput.value = state.mode;
   if (customAmountInput) customAmountInput.value = state.customAmount;
-  if (scriptInput) scriptInput.value = state.scriptUrl;
   
   toggleCustomAmountInput();
+  updateUrlDisplays();
 }
 
 function saveToStorage() {
@@ -336,8 +333,6 @@ function toggleCustomAmountInput() {
 
 function saveSettings() {
   state.startDate = document.getElementById('startDateInput').value;
-  state.sheetUrl = document.getElementById('sheetUrlInput').value.trim();
-  state.scriptUrl = document.getElementById('backendUrlInput').value.trim();
 
   const newMode = document.getElementById('modeSelect').value;
   let newCustomAmount = state.customAmount;
@@ -364,12 +359,47 @@ function saveSettings() {
 }
 
 function openSheet() {
-  const url = document.getElementById('sheetUrlInput').value.trim() || state.sheetUrl;
+  const url = state.sheetUrl;
   if (url) {
     window.open(url, '_blank');
   } else {
-    showToast('⚠️ 請先輸入試算表連結', 'error');
+    showToast('⚠️ 請先設定試算表連結', 'error');
   }
+}
+
+function promptSheetUrl() {
+  const url = prompt('請輸入你的 Google 試算表連結：\n(可選，方便從此 App 快速開啟)', state.sheetUrl);
+  if (url !== null) {
+    state.sheetUrl = url.trim();
+    saveToStorage();
+    updateUrlDisplays();
+    showToast('✅ 試算表連結已更新');
+  }
+}
+
+function promptBackendUrl() {
+  const url = prompt('請輸入 Google Apps Script 部署網址：\n(留白代表僅存於手機內)', state.scriptUrl);
+  if (url !== null) {
+    state.scriptUrl = url.trim();
+    saveToStorage();
+    updateUrlDisplays();
+    showToast('✅ 同步後端已更新');
+  }
+}
+
+function updateUrlDisplays() {
+  const sheetDisp = document.getElementById('sheetUrlDisplay');
+  const backendDisp = document.getElementById('backendUrlDisplay');
+  if (sheetDisp) sheetDisp.textContent = state.sheetUrl ? state.sheetUrl : '尚未設定';
+  if (backendDisp) backendDisp.textContent = state.scriptUrl ? '✅ 已設定同步後端' : '目前：僅存於手機內';
+}
+
+function openHelpModal() {
+  document.getElementById('helpModal').classList.add('show');
+}
+
+function closeHelpModal() {
+  document.getElementById('helpModal').classList.remove('show');
 }
 
 function confirmReset() {

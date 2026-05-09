@@ -129,20 +129,22 @@
         <input type="number" id="customAmountInput" value="100" min="1" style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg-primary); color: var(--text-primary); font-size: 1rem;">
       </div>
       <div class="setting-group">
-        <label for="sheetUrlInput">Google 試算表連結 (可選 - 方便快速開啟)</label>
+        <label>Google 試算表連結 (可選 - 快速開啟)</label>
         <div style="display: flex; gap: 8px;">
-          <input type="url" id="sheetUrlInput" placeholder="https://docs.google.com/spreadsheets/..." style="flex:1;">
-          <button class="btn btn-outline" onclick="openSheet()" style="white-space: nowrap; padding: 0 12px; font-size: 0.9rem;">開啟試算表</button>
+          <button class="btn btn-outline" onclick="promptSheetUrl()" style="flex:1;">設定連結</button>
+          <button class="btn btn-outline" onclick="openSheet()" style="flex:1;">開啟試算表</button>
         </div>
+        <div id="sheetUrlDisplay" style="font-size: 0.8rem; color: var(--text-dim); margin-top: 6px; word-break: break-all; padding: 4px;">尚未設定</div>
       </div>
       <div class="setting-group">
-        <label for="backendUrlInput">資料同步後端網址 (進階選項)</label>
-        <input type="url" id="backendUrlInput" placeholder="如果你不知道這是什麼，請留白即可">
-        <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px;">留白時，所有資料會安全地存在你的手機裡。</p>
+        <label>資料同步後端網址 (進階選項)</label>
+        <button class="btn btn-outline" onclick="promptBackendUrl()" style="width: 100%;">設定同步後端</button>
+        <div id="backendUrlDisplay" style="font-size: 0.8rem; color: var(--text-dim); margin-top: 6px; word-break: break-all; padding: 4px;">目前：僅存於手機內</div>
       </div>
       <button class="btn btn-primary" onclick="saveSettings()" style="margin-top:8px">儲存設定</button>
 
       <div style="margin-top:24px">
+        <button class="btn btn-outline" onclick="openHelpModal()" style="width:100%; border-color: var(--accent-blue); color: var(--accent-blue); margin-bottom: 12px;">📖 查看使用說明</button>
         <button class="btn btn-danger" onclick="confirmReset()" style="width:100%">重置資料</button>
       </div>
     </div>
@@ -160,6 +162,37 @@
         <button class="btn btn-outline" onclick="closeModal()">取消</button>
         <button class="btn btn-primary" id="modalConfirmBtn" onclick="confirmDeposit()">確認存入</button>
       </div>
+    </div>
+  </div>
+
+  <!-- ===== Help Modal ===== -->
+  <div class="modal-overlay" id="helpModal">
+    <div class="modal-content" style="text-align: left; max-height: 80vh; overflow-y: auto;">
+      <h3 style="margin-bottom: 16px; color: var(--accent-blue); text-align: center;">📖 使用說明</h3>
+      
+      <h4 style="color: var(--accent-purple); margin-top: 12px;">🎯 基本玩法</h4>
+      <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 8px; line-height: 1.5;">
+        1. 到「設定」選擇你的挑戰模式與開始日期。<br>
+        2. 每天到「存款」頁面，手動點選一個金額，或是按「🎲 幫我決定」讓輪盤挑選。<br>
+        3. 確認存入後，系統會自動記錄進度並頒發成就徽章！
+      </p>
+
+      <h4 style="color: var(--accent-purple); margin-top: 12px;">🎮 挑戰模式介紹</h4>
+      <ul style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 8px; padding-left: 20px; line-height: 1.5;">
+        <li><b>正常 365：</b> 第1天存1元，第365天存365元。</li>
+        <li><b>雙倍 365：</b> 傳統版的兩倍難度 (2, 4, 6...)。</li>
+        <li><b>混合加壓版：</b> 前180天雙倍，後185天正常。</li>
+        <li><b>定期定額：</b> 每天存入固定的自訂金額。</li>
+      </ul>
+
+      <h4 style="color: var(--accent-purple); margin-top: 12px;">☁️ 資料儲存與同步</h4>
+      <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 8px; line-height: 1.5;">
+        預設情況下，所有紀錄都<b>只會儲存在你的手機裡</b>，換手機或清除瀏覽器資料就會消失。<br><br>
+        若想永久保存，可使用<b>進階同步功能</b>：<br>
+        前往 Google 試算表建立一個檔案，透過 Apps Script 部署 API 後，將網址貼到設定的「資料同步後端網址」。
+      </p>
+
+      <button class="btn btn-primary" onclick="closeHelpModal()" style="width:100%; margin-top: 20px;">我了解了</button>
     </div>
   </div>
 
