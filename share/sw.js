@@ -1,4 +1,4 @@
-const CACHE_NAME = 'savings365-share-v2';
+const CACHE_NAME = 'savings365-share-v3';
 const ASSETS = [
   './',
   './index.html',

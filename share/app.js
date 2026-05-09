@@ -154,7 +154,7 @@ function renderHome() {
   const completed = state.deposits.length;
   const totalSaved = getTotalSaved();
   const currentDay = getCurrentDay();
-  const targetAmount = MODES[state.mode].total;
+  const targetAmount = MODES[state.mode].total(state);
 
   // Progress ring
   const circumference = 2 * Math.PI * 68; // ~427.26
@@ -228,7 +228,7 @@ function renderHome() {
 
 // ===== Deposit Grid =====
 function renderGrid() {
-  const ALL_AMOUNTS = MODES[state.mode].generate().sort((a, b) => a.amount - b.amount);
+  const ALL_AMOUNTS = MODES[state.mode].generate(state).sort((a, b) => a.amount - b.amount);
 
   let available = [...ALL_AMOUNTS];
   for (const d of state.deposits) {
@@ -326,19 +326,34 @@ function switchTab(tab) {
   if (tab === 'deposit') renderGrid();
 }
 
-// ===== Settings =====
+function toggleCustomAmountInput() {
+  const mode = document.getElementById('modeSelect').value;
+  const container = document.getElementById('customAmountContainer');
+  if (container) {
+    container.style.display = mode === 'custom_fixed' ? 'block' : 'none';
+  }
+}
+
 function saveSettings() {
   state.startDate = document.getElementById('startDateInput').value;
   state.sheetUrl = document.getElementById('sheetUrlInput').value.trim();
   state.scriptUrl = document.getElementById('backendUrlInput').value.trim();
 
   const newMode = document.getElementById('modeSelect').value;
-  if (newMode !== state.mode) {
-    if (state.deposits.length > 0 && !confirm(`確定要將模式改為「${MODES[newMode].name}」嗎？\n⚠️ 注意：這將會清空你目前所有的存款紀錄！`)) {
-      document.getElementById('modeSelect').value = state.mode; // Revert select visually
-      return; // Abort save
+  let newCustomAmount = state.customAmount;
+  if (newMode === 'custom_fixed') {
+    newCustomAmount = parseInt(document.getElementById('customAmountInput').value) || 100;
+  }
+
+  if (newMode !== state.mode || (newMode === 'custom_fixed' && newCustomAmount !== state.customAmount)) {
+    if (state.deposits.length > 0 && !confirm(`確定要變更存款模式嗎？\n⚠️ 注意：這將會清空你目前所有的存款紀錄！`)) {
+      document.getElementById('modeSelect').value = state.mode;
+      if (document.getElementById('customAmountInput')) document.getElementById('customAmountInput').value = state.customAmount;
+      toggleCustomAmountInput();
+      return;
     }
     state.mode = newMode;
+    state.customAmount = newCustomAmount;
     state.deposits = [];
     state.earnedBadges = [];
   }
