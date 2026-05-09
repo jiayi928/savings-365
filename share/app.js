@@ -413,7 +413,38 @@ function updateUrlDisplays() {
   if (backendDisp) backendDisp.textContent = state.scriptUrl ? '✅ 已設定同步後端' : '目前：僅存於手機內';
 }
 
+let currentSlide = 0;
+
+function updateSlider() {
+  const container = document.getElementById('sliderContainer');
+  if (!container) return;
+  container.style.transform = `translateX(-${currentSlide * 25}%)`;
+  
+  const dots = document.getElementById('sliderDots').children;
+  for (let i = 0; i < dots.length; i++) {
+    dots[i].style.background = i === currentSlide ? 'var(--accent-purple)' : 'var(--bg-secondary)';
+  }
+  
+  const nextBtn = document.getElementById('sliderNextBtn');
+  if (currentSlide === 3) {
+    nextBtn.textContent = '開始使用！';
+    nextBtn.onclick = closeHelpModal;
+  } else {
+    nextBtn.textContent = '下一步';
+    nextBtn.onclick = nextSlide;
+  }
+}
+
+function nextSlide() {
+  if (currentSlide < 3) {
+    currentSlide++;
+    updateSlider();
+  }
+}
+
 function openHelpModal() {
+  currentSlide = 0;
+  updateSlider();
   document.getElementById('helpModal').classList.add('show');
 }
 

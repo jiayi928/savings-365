@@ -180,67 +180,52 @@
 
   <!-- ===== Help Modal ===== -->
   <div class="modal-overlay" id="helpModal">
-    <div class="modal-content" style="text-align: left; max-height: 85vh; overflow-y: auto; padding: 24px 16px;">
-      <h3 style="margin-bottom: 20px; color: var(--accent-blue); text-align: center; font-size: 1.3rem;">📖 圖文使用教學</h3>
+    <div class="modal-content" style="padding: 0; overflow: hidden; background: var(--bg-primary); max-width: 400px; width: 90%;">
+      <div id="sliderContainer" style="display: flex; transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1); width: 400%;">
+        
+        <!-- Slide 1 -->
+        <div style="width: 25%; text-align: center; padding: 32px 24px 16px;">
+          <img src="assets/step1.png" alt="選擇模式" style="width: 100%; max-width: 240px; border-radius: 20px; margin-bottom: 24px; box-shadow: 0 12px 32px rgba(124,106,255,0.25);">
+          <h3 style="color: var(--text-primary); margin-bottom: 12px; font-size: 1.3rem;">1. 選擇適合的模式</h3>
+          <p style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.6;">前往「設定」頁面挑選挑戰模式。<br>共有經典 365、加壓雙倍、或是自訂金額的定期定額模式可以選擇！</p>
+        </div>
+
+        <!-- Slide 2 -->
+        <div style="width: 25%; text-align: center; padding: 32px 24px 16px;">
+          <img src="assets/step2.png" alt="每日存錢" style="width: 100%; max-width: 240px; border-radius: 20px; margin-bottom: 24px; box-shadow: 0 12px 32px rgba(124,106,255,0.25);">
+          <h3 style="color: var(--text-primary); margin-bottom: 12px; font-size: 1.3rem;">2. 每日存錢與抽籤</h3>
+          <p style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.6;">切換到「存款」頁面手動點擊方塊，<br>或是使用「🎲幫我決定」讓系統為你隨機抽一個幸運數字！</p>
+        </div>
+
+        <!-- Slide 3 -->
+        <div style="width: 25%; text-align: center; padding: 32px 24px 16px;">
+          <img src="assets/step3.png" alt="進度與成就" style="width: 100%; max-width: 240px; border-radius: 20px; margin-bottom: 24px; box-shadow: 0 12px 32px rgba(124,106,255,0.25);">
+          <h3 style="color: var(--text-primary); margin-bottom: 12px; font-size: 1.3rem;">3. 查看進度與成就</h3>
+          <p style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.6;">在「首頁」隨時掌握存款總額與剩餘目標。<br>當你達成特定天數時，還會解鎖專屬成就徽章 🏆！</p>
+        </div>
+
+        <!-- Slide 4 -->
+        <div style="width: 25%; text-align: center; padding: 32px 24px 16px;">
+          <img src="assets/step4.png" alt="雲端備份" style="width: 100%; max-width: 240px; border-radius: 20px; margin-bottom: 24px; box-shadow: 0 12px 32px rgba(124,106,255,0.25);">
+          <h3 style="color: var(--text-primary); margin-bottom: 12px; font-size: 1.3rem;">4. 雲端資料同步</h3>
+          <p style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.6;">預設資料僅存在手機。<br>若怕遺失，可至設定綁定 Google Apps Script API，即可自動備份到雲端試算表。</p>
+        </div>
+        
+      </div>
       
-      <div style="display: flex; gap: 12px; margin-bottom: 16px; align-items: flex-start; background: var(--bg-secondary); padding: 12px; border-radius: 12px;">
-        <div style="flex-shrink: 0;">
-          <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-            <rect x="4" y="14" width="40" height="20" rx="4" fill="var(--bg-primary)" stroke="var(--accent-blue)" stroke-width="2"/>
-            <path d="M34 22L38 26L42 22" stroke="var(--accent-blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <circle cx="16" cy="24" r="4" fill="var(--accent-purple)"/>
-          </svg>
+      <!-- Controls -->
+      <div style="padding: 0 24px 24px;">
+        <div style="display: flex; justify-content: center; gap: 8px; margin-bottom: 28px;" id="sliderDots">
+          <div style="width: 8px; height: 8px; border-radius: 4px; background: var(--accent-purple); transition: 0.3s;"></div>
+          <div style="width: 8px; height: 8px; border-radius: 4px; background: var(--bg-secondary); transition: 0.3s;"></div>
+          <div style="width: 8px; height: 8px; border-radius: 4px; background: var(--bg-secondary); transition: 0.3s;"></div>
+          <div style="width: 8px; height: 8px; border-radius: 4px; background: var(--bg-secondary); transition: 0.3s;"></div>
         </div>
-        <div>
-          <h4 style="color: var(--text-primary); margin: 0 0 4px 0; font-size: 1rem;">1. 選擇適合的模式</h4>
-          <p style="color: var(--text-secondary); margin: 0; font-size: 0.85rem; line-height: 1.5;">前往「設定」頁面挑選挑戰模式。共有經典 365、雙倍、或是自訂金額的定期定額模式可以選擇！</p>
-        </div>
-      </div>
-
-      <div style="display: flex; gap: 12px; margin-bottom: 16px; align-items: flex-start; background: var(--bg-secondary); padding: 12px; border-radius: 12px;">
-        <div style="flex-shrink: 0;">
-          <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-            <rect x="4" y="4" width="18" height="18" rx="4" fill="var(--bg-primary)" stroke="var(--accent-blue)" stroke-width="2"/>
-            <rect x="26" y="4" width="18" height="18" rx="4" fill="var(--accent-purple)"/>
-            <rect x="4" y="26" width="18" height="18" rx="4" fill="var(--bg-primary)" stroke="var(--accent-blue)" stroke-width="2"/>
-            <text x="35" y="17" fill="white" font-size="12" font-weight="bold" text-anchor="middle">✓</text>
-            <text x="35" y="40" fill="var(--text-primary)" font-size="16" text-anchor="middle">🎲</text>
-          </svg>
-        </div>
-        <div>
-          <h4 style="color: var(--text-primary); margin: 0 0 4px 0; font-size: 1rem;">2. 每日存錢與抽籤</h4>
-          <p style="color: var(--text-secondary); margin: 0; font-size: 0.85rem; line-height: 1.5;">切換到「存款」頁面，你可以點擊方塊手動選擇想存的金額，或是點擊「🎲 幫我決定」讓系統為你隨機抽一個數字！</p>
+        <div style="display: flex; gap: 12px;">
+          <button class="btn btn-outline" id="sliderSkipBtn" onclick="closeHelpModal()" style="flex: 1; border-color: var(--border); color: var(--text-secondary);">略過</button>
+          <button class="btn btn-primary" id="sliderNextBtn" onclick="nextSlide()" style="flex: 2; box-shadow: 0 4px 15px rgba(124,106,255,0.3);">下一步</button>
         </div>
       </div>
-
-      <div style="display: flex; gap: 12px; margin-bottom: 16px; align-items: flex-start; background: var(--bg-secondary); padding: 12px; border-radius: 12px;">
-        <div style="flex-shrink: 0;">
-          <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-            <circle cx="24" cy="24" r="18" stroke="var(--bg-primary)" stroke-width="4"/>
-            <path d="M24 6 A18 18 0 0 1 42 24" stroke="var(--accent-purple)" stroke-width="4" stroke-linecap="round"/>
-            <text x="24" y="28" fill="var(--text-primary)" font-size="12" font-weight="bold" text-anchor="middle">50%</text>
-          </svg>
-        </div>
-        <div>
-          <h4 style="color: var(--text-primary); margin: 0 0 4px 0; font-size: 1rem;">3. 查看進度與成就</h4>
-          <p style="color: var(--text-secondary); margin: 0; font-size: 0.85rem; line-height: 1.5;">在「首頁」隨時掌握你的存款總額與剩餘目標。當你達成特定天數或金額時，還會解鎖專屬的徽章成就 🏆！</p>
-        </div>
-      </div>
-
-      <div style="display: flex; gap: 12px; margin-bottom: 16px; align-items: flex-start; background: var(--bg-secondary); padding: 12px; border-radius: 12px;">
-        <div style="flex-shrink: 0;">
-          <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-            <path d="M14 34C9.58172 34 6 30.4183 6 26C6 21.5817 9.58172 18 14 18C15.3857 12.3396 20.2525 8 26 8C32.6274 8 38 13.3726 38 20C41.3137 20 44 22.6863 44 26C44 29.3137 41.3137 32 38 32" stroke="var(--accent-blue)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M26 18V38M26 38L20 32M26 38L32 32" stroke="var(--accent-purple)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </div>
-        <div>
-          <h4 style="color: var(--text-primary); margin: 0 0 4px 0; font-size: 1rem;">4. 雲端資料同步 (進階)</h4>
-          <p style="color: var(--text-secondary); margin: 0; font-size: 0.85rem; line-height: 1.5;">預設資料僅存在手機中。若怕遺失，可至設定綁定 Apps Script 網址，每次存錢就會自動備份到雲端試算表。</p>
-        </div>
-      </div>
-
-      <button class="btn btn-primary" onclick="closeHelpModal()" style="width:100%; margin-top: 8px;">我完全了解了！</button>
     </div>
   </div>
 
