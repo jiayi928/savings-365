@@ -1,4 +1,4 @@
-const savedTheme = localStorage.getItem('theme') || 'dark';
+const savedTheme = localStorage.getItem('share_theme') || 'dark';
 if (savedTheme === 'light') {
   document.documentElement.setAttribute('data-theme', 'light');
 }
@@ -10,7 +10,8 @@ const state = {
   startDate: '',
   scriptUrl: '',
   sheetUrl: '',
-  mode: 'half_double',
+  mode: 'classic',     // Default to classic for public
+  customAmount: 100,   // Default custom amount
   currentTab: 'home',
   pendingAmount: null,
   pendingPool: null,
@@ -19,28 +20,28 @@ const state = {
 // ===== Configuration =====
 const MODES = {
   'classic': {
-    name: '經典階梯 (1~365)',
-    generate: () => Array.from({length: 365}, (_, i) => ({ amount: i + 1, pool: 'normal' })),
-    total: 66795
+    name: '正常 365 (1~365)',
+    generate: (state) => Array.from({length: 365}, (_, i) => ({ amount: i + 1, pool: 'normal' })),
+    total: (state) => 66795
+  },
+  'double_365': {
+    name: '雙倍 365 (全部x2)',
+    generate: (state) => Array.from({length: 365}, (_, i) => ({ amount: (i + 1) * 2, pool: 'double' })),
+    total: (state) => 133590
   },
   'half_double': {
-    name: '加壓雙倍 (目前版本)',
-    generate: () => {
+    name: '混合加壓版 (1~180雙倍)',
+    generate: (state) => {
       const d = Array.from({length: 180}, (_, i) => ({ amount: (i + 1) * 2, pool: 'double' }));
       const n = Array.from({length: 185}, (_, i) => ({ amount: i + 181, pool: 'normal' }));
       return [...d, ...n];
     },
-    total: 83085
+    total: (state) => 83085
   },
-  'fixed_100': {
-    name: '每日定額 100',
-    generate: () => Array.from({length: 365}, () => ({ amount: 100, pool: 'normal' })),
-    total: 36500
-  },
-  'fixed_50': {
-    name: '每日定額 50',
-    generate: () => Array.from({length: 365}, () => ({ amount: 50, pool: 'normal' })),
-    total: 18250
+  'custom_fixed': {
+    name: '定期定額 (自訂金額)',
+    generate: (state) => Array.from({length: 365}, () => ({ amount: state.customAmount, pool: 'normal' })),
+    total: (state) => 365 * state.customAmount
   }
 };
 
@@ -62,46 +63,13 @@ document.addEventListener('DOMContentLoaded', () => {
 // ===== Storage =====
 function loadFromStorage() {
   try {
-    state.deposits = JSON.parse(localStorage.getItem('deposits') || '[]');
-    
-    // 自動匯入舊截圖紀錄 (一次性)
-    if (!localStorage.getItem('legacy_imported_v2')) {
-      const legacyDouble = [2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,34,36,38,40,42,44,46,48,50,52,54,56,58,60,62,64,66,68,70,72,74,76,78,80,82,84,86,88,90,92,94,96,98,100,102,104,106,108,110,112,114,116,118,120,122,124,126,128,130,132,134,136,138,140,142,144,146,148,150,152,154,156,158,160,162, 184, 200, 218, 222, 250, 258, 270, 300, 302, 304, 306, 310, 314, 320, 330, 360];
-      const legacyNormal = [237, 303, 305, 320, 355, 361, 362, 363, 364, 365];
-      const now = Date.now();
-      const todayDate = new Date().toISOString().split('T')[0];
-      let imported = false;
-      
-      legacyDouble.forEach(amt => {
-        if (!state.deposits.find(d => d.amount === amt && d.pool === 'double')) {
-          state.deposits.push({ amount: amt, pool: 'double', date: todayDate, timestamp: now });
-          imported = true;
-        }
-      });
-      legacyNormal.forEach(amt => {
-        if (!state.deposits.find(d => d.amount === amt && d.pool === 'normal')) {
-          state.deposits.push({ amount: amt, pool: 'normal', date: todayDate, timestamp: now });
-          imported = true;
-        }
-      });
-      
-      if (imported) localStorage.setItem('deposits', JSON.stringify(state.deposits));
-      localStorage.setItem('legacy_imported_v2', 'true');
-    }
-
-    state.startDate = localStorage.getItem('startDate') || '';
-    state.sheetUrl = localStorage.getItem('sheetUrl') || '';
-    state.earnedBadges = JSON.parse(localStorage.getItem('earnedBadges') || '[]');
-    state.mode = localStorage.getItem('mode') || 'half_double';
-    
-    // Migrate backend URL for existing users
-    state.scriptUrl = localStorage.getItem('scriptUrl');
-    if (state.scriptUrl === null && localStorage.getItem('legacy_imported_v2')) {
-      state.scriptUrl = 'https://script.google.com/macros/s/AKfycbxQ06U4KRDbEgf-xTszktB-mrJRpv6dAlBaQYZDJIb9xo6u2bkAuMEiG4Rf5UTcKJys/exec';
-      localStorage.setItem('scriptUrl', state.scriptUrl);
-    } else if (state.scriptUrl === null) {
-      state.scriptUrl = '';
-    }
+    state.deposits = JSON.parse(localStorage.getItem('share_deposits') || '[]');
+    state.startDate = localStorage.getItem('share_startDate') || '';
+    state.sheetUrl = localStorage.getItem('share_sheetUrl') || '';
+    state.earnedBadges = JSON.parse(localStorage.getItem('share_earnedBadges') || '[]');
+    state.mode = localStorage.getItem('share_mode') || 'classic';
+    state.customAmount = parseInt(localStorage.getItem('share_customAmount')) || 100;
+    state.scriptUrl = localStorage.getItem('share_scriptUrl') || '';
   } catch (e) {
     state.deposits = [];
     state.earnedBadges = [];
@@ -110,20 +78,26 @@ function loadFromStorage() {
   const dateInput = document.getElementById('startDateInput');
   const sheetInput = document.getElementById('sheetUrlInput');
   const modeInput = document.getElementById('modeSelect');
+  const customAmountInput = document.getElementById('customAmountInput');
   const scriptInput = document.getElementById('backendUrlInput');
+  
   if (dateInput) dateInput.value = state.startDate;
   if (sheetInput) sheetInput.value = state.sheetUrl;
   if (modeInput) modeInput.value = state.mode;
+  if (customAmountInput) customAmountInput.value = state.customAmount;
   if (scriptInput) scriptInput.value = state.scriptUrl;
+  
+  toggleCustomAmountInput();
 }
 
 function saveToStorage() {
-  localStorage.setItem('deposits', JSON.stringify(state.deposits));
-  localStorage.setItem('startDate', state.startDate);
-  localStorage.setItem('sheetUrl', state.sheetUrl);
-  localStorage.setItem('scriptUrl', state.scriptUrl);
-  localStorage.setItem('mode', state.mode);
-  localStorage.setItem('earnedBadges', JSON.stringify(state.earnedBadges));
+  localStorage.setItem('share_deposits', JSON.stringify(state.deposits));
+  localStorage.setItem('share_startDate', state.startDate);
+  localStorage.setItem('share_sheetUrl', state.sheetUrl);
+  localStorage.setItem('share_scriptUrl', state.scriptUrl);
+  localStorage.setItem('share_mode', state.mode);
+  localStorage.setItem('share_customAmount', state.customAmount);
+  localStorage.setItem('share_earnedBadges', JSON.stringify(state.earnedBadges));
 }
 
 // ===== Helpers =====
