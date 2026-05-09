@@ -137,6 +137,12 @@
         <div id="sheetUrlDisplay" style="font-size: 0.8rem; color: var(--text-dim); margin-top: 6px; word-break: break-all; padding: 4px;">尚未設定</div>
       </div>
       <div class="setting-group" style="margin-top: 16px;">
+        <label>資料同步後端網址 (進階選項)</label>
+        <button class="btn btn-outline" onclick="promptBackendUrl()" style="width: 100%;">設定同步後端</button>
+        <div id="backendUrlDisplay" style="font-size: 0.8rem; color: var(--text-dim); margin-top: 6px; word-break: break-all; padding: 4px;">目前：僅存於手機內</div>
+      </div>
+
+      <div class="setting-group" style="margin-top: 16px;">
         <label>手動備份與還原 (不使用雲端時的替代方案)</label>
         <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px; margin-bottom: 8px;">若無法使用雲端同步，可以將資料下載為檔案保存，換手機時再匯入。</p>
         <div style="display: flex; gap: 8px;">
@@ -146,10 +152,14 @@
         </div>
       </div>
 
+      <button class="btn btn-primary" onclick="saveSettings()" style="margin-top:16px; width:100%;">儲存基本設定</button>
+
       <div style="margin-top:24px">
         <button class="btn btn-outline" onclick="window.location.href='guide.html'" style="width:100%; border-color: var(--accent-blue); color: var(--accent-blue); margin-bottom: 12px;">📖 查看完整使用教學與雲端設定</button>
         <button class="btn btn-danger" onclick="confirmReset()" style="width:100%">重置資料</button>
       </div>
+    </div>
+  </div>
 
   <!-- ===== Confirm Modal ===== -->
   <div class="modal-overlay" id="confirmModal">
