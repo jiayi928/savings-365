@@ -165,6 +165,19 @@
     </div>
   </div>
 
+  <!-- ===== Input Modal ===== -->
+  <div class="modal-overlay" id="inputModal">
+    <div class="modal-content">
+      <h3 id="inputModalTitle">輸入連結</h3>
+      <p id="inputModalDesc" style="font-size: 0.85rem; color: var(--text-secondary); margin: 8px 0;"></p>
+      <input type="url" id="inputModalField" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-primary); color: var(--text-primary); font-size: 1rem; margin-bottom: 16px;">
+      <div class="modal-buttons">
+        <button class="btn btn-outline" onclick="closeInputModal()">取消</button>
+        <button class="btn btn-primary" onclick="confirmInputModal()">確認</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ===== Help Modal ===== -->
   <div class="modal-overlay" id="helpModal">
     <div class="modal-content" style="text-align: left; max-height: 80vh; overflow-y: auto;">

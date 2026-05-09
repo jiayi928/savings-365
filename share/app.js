@@ -367,24 +367,43 @@ function openSheet() {
   }
 }
 
+let currentInputCallback = null;
+
 function promptSheetUrl() {
-  const url = prompt('請輸入你的 Google 試算表連結：\n(可選，方便從此 App 快速開啟)', state.sheetUrl);
-  if (url !== null) {
-    state.sheetUrl = url.trim();
+  document.getElementById('inputModalTitle').textContent = '設定試算表連結';
+  document.getElementById('inputModalDesc').innerHTML = '請輸入你的 Google 試算表連結：<br>(可選，方便從此 App 快速開啟)';
+  document.getElementById('inputModalField').value = state.sheetUrl;
+  currentInputCallback = (val) => {
+    state.sheetUrl = val.trim();
     saveToStorage();
     updateUrlDisplays();
     showToast('✅ 試算表連結已更新');
-  }
+  };
+  document.getElementById('inputModal').classList.add('show');
 }
 
 function promptBackendUrl() {
-  const url = prompt('請輸入 Google Apps Script 部署網址：\n(留白代表僅存於手機內)', state.scriptUrl);
-  if (url !== null) {
-    state.scriptUrl = url.trim();
+  document.getElementById('inputModalTitle').textContent = '設定同步後端';
+  document.getElementById('inputModalDesc').innerHTML = '請輸入 Google Apps Script 部署網址：<br>(留白代表僅存於手機內)';
+  document.getElementById('inputModalField').value = state.scriptUrl;
+  currentInputCallback = (val) => {
+    state.scriptUrl = val.trim();
     saveToStorage();
     updateUrlDisplays();
     showToast('✅ 同步後端已更新');
-  }
+  };
+  document.getElementById('inputModal').classList.add('show');
+}
+
+function closeInputModal() {
+  document.getElementById('inputModal').classList.remove('show');
+  currentInputCallback = null;
+}
+
+function confirmInputModal() {
+  const val = document.getElementById('inputModalField').value;
+  if (currentInputCallback) currentInputCallback(val);
+  closeInputModal();
 }
 
 function updateUrlDisplays() {
