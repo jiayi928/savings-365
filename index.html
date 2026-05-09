@@ -121,30 +121,18 @@
         <label for="scriptUrlInput">Google Apps Script URL</label>
         <input type="url" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/...">
       </div>
+      <div class="setting-group">
+        <label for="sheetUrlInput">Google 試算表連結 (可選)</label>
+        <div style="display: flex; gap: 8px;">
+          <input type="url" id="sheetUrlInput" placeholder="https://docs.google.com/spreadsheets/..." style="flex:1;">
+          <button class="btn btn-outline" onclick="openSheet()" style="white-space: nowrap; padding: 0 12px; font-size: 0.9rem;">開啟試算表</button>
+        </div>
+      </div>
       <button class="btn btn-primary" onclick="saveSettings()" style="margin-top:8px">儲存設定</button>
 
       <div style="margin-top:12px">
         <button class="btn btn-danger" onclick="confirmReset()" style="width:100%">重置資料</button>
       </div>
-    </div>
-
-    <div class="setup-guide">
-      <h3>📖 Google 試算表連接教學</h3>
-      <p style="margin-bottom:10px">請點擊下方按鈕複製 Apps Script 程式碼，然後按照步驟設定：</p>
-      <button class="btn btn-primary" onclick="copyAppsScript()" style="margin-bottom:14px;font-size:0.85rem">
-        📋 複製 Apps Script 程式碼
-      </button>
-      <ol>
-        <li>開啟 <a href="https://sheets.google.com" target="_blank" style="color:var(--accent-blue)">Google 試算表</a>，建立新的空白試算表</li>
-        <li>點選上方選單 <code>擴充功能</code> → <code>Apps Script</code></li>
-        <li>刪除預設程式碼，<strong style="color:var(--accent-blue)">貼上剛才複製的程式碼</strong></li>
-        <li>點選 <code>部署</code> → <code>新增部署作業</code></li>
-        <li>左邊齒輪圖示選擇 <code>網頁應用程式</code></li>
-        <li>「執行身分」選 <code>我</code>，「誰可以存取」選 <code>所有人</code></li>
-        <li>點選「部署」→ 授權你的 Google 帳號</li>
-        <li>複製產生的網址，貼到上方「Google Apps Script URL」欄位</li>
-        <li>點選「儲存設定」→ 點選右上角「同步」即完成！</li>
-      </ol>
     </div>
   </div>
 

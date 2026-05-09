@@ -3,6 +3,7 @@ const state = {
   deposits: [],        // [{ amount, pool, date, timestamp }]
   startDate: '',
   scriptUrl: '',
+  sheetUrl: '',
   currentPool: 'double',
   currentTab: 'home',
   pendingAmount: null,
@@ -52,20 +53,24 @@ function loadFromStorage() {
 
     state.startDate = localStorage.getItem('startDate') || '';
     state.scriptUrl = localStorage.getItem('scriptUrl') || '';
+    state.sheetUrl = localStorage.getItem('sheetUrl') || '';
   } catch (e) {
     state.deposits = [];
   }
   // Populate settings inputs
   const dateInput = document.getElementById('startDateInput');
   const urlInput = document.getElementById('scriptUrlInput');
+  const sheetInput = document.getElementById('sheetUrlInput');
   if (dateInput) dateInput.value = state.startDate;
   if (urlInput) urlInput.value = state.scriptUrl;
+  if (sheetInput) sheetInput.value = state.sheetUrl;
 }
 
 function saveToStorage() {
   localStorage.setItem('deposits', JSON.stringify(state.deposits));
   localStorage.setItem('startDate', state.startDate);
   localStorage.setItem('scriptUrl', state.scriptUrl);
+  localStorage.setItem('sheetUrl', state.sheetUrl);
 }
 
 // ===== Helpers =====
@@ -310,9 +315,19 @@ function switchTab(tab) {
 function saveSettings() {
   state.startDate = document.getElementById('startDateInput').value;
   state.scriptUrl = document.getElementById('scriptUrlInput').value.trim();
+  state.sheetUrl = document.getElementById('sheetUrlInput').value.trim();
   saveToStorage();
   renderAll();
   showToast('✅ 設定已儲存', 'success');
+}
+
+function openSheet() {
+  const url = document.getElementById('sheetUrlInput').value.trim() || state.sheetUrl;
+  if (url) {
+    window.open(url, '_blank');
+  } else {
+    showToast('⚠️ 請先輸入試算表連結', 'error');
+  }
 }
 
 function confirmReset() {
@@ -326,126 +341,7 @@ function confirmReset() {
 
 
 
-// ===== Copy Apps Script =====
-async function copyAppsScript() {
-  const script = `const SHEET_NAME = '存款紀錄';
 
-function getOrCreateSheet() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  let sheet = ss.getSheetByName(SHEET_NAME);
-  if (!sheet) {
-    sheet = ss.insertSheet(SHEET_NAME);
-    sheet.getRange('A1:D1').setValues([['日期', '金額', '區間', '備註']]);
-    sheet.getRange('A1:D1').setFontWeight('bold').setBackground('#4a90d9').setFontColor('white');
-    sheet.setFrozenRows(1);
-    sheet.setColumnWidth(1, 120);
-    sheet.setColumnWidth(2, 100);
-    sheet.setColumnWidth(3, 80);
-    sheet.setColumnWidth(4, 150);
-  }
-  return sheet;
-}
-
-function doGet(e) {
-  try {
-    const action = e.parameter.action || 'getAll';
-    if (action === 'getAll') return getAllRecords();
-    return jsonResponse({ status: 'error', message: '未知的 action' });
-  } catch (err) {
-    return jsonResponse({ status: 'error', message: err.message });
-  }
-}
-
-function doPost(e) {
-  try {
-    const data = JSON.parse(e.postData.contents);
-    if (data.action === 'deposit') return addDeposit(data);
-    if (data.action === 'delete') return deleteDeposit(data);
-    return jsonResponse({ status: 'error', message: '未知的 action' });
-  } catch (err) {
-    return jsonResponse({ status: 'error', message: err.message });
-  }
-}
-
-function getAllRecords() {
-  const sheet = getOrCreateSheet();
-  const lastRow = sheet.getLastRow();
-  if (lastRow <= 1) return jsonResponse({ status: 'success', records: [] });
-  const data = sheet.getRange(2, 1, lastRow - 1, 4).getValues();
-  const records = data.map(row => ({
-    date: formatDateValue(row[0]),
-    amount: Number(row[1]),
-    pool: row[2] === '雙倍' ? 'double' : 'normal',
-    note: row[3] || ''
-  }));
-  return jsonResponse({ status: 'success', records });
-}
-
-function addDeposit(data) {
-  const sheet = getOrCreateSheet();
-  const poolLabel = data.pool === 'double' ? '雙倍' : '正常';
-  const date = data.date || new Date().toISOString().split('T')[0];
-  const lastRow = sheet.getLastRow();
-  if (lastRow > 1) {
-    const existing = sheet.getRange(2, 1, lastRow - 1, 3).getValues();
-    for (let i = 0; i < existing.length; i++) {
-      if (Number(existing[i][1]) === Number(data.amount) && existing[i][2] === poolLabel) {
-        return jsonResponse({ status: 'error', message: '此金額已存在紀錄' });
-      }
-    }
-  }
-  sheet.appendRow([date, data.amount, poolLabel, '']);
-  if (sheet.getLastRow() > 2) {
-    sheet.getRange(2, 1, sheet.getLastRow() - 1, 4).sort({ column: 1, ascending: true });
-  }
-  return jsonResponse({ status: 'success', message: '存款紀錄已新增' });
-}
-
-function deleteDeposit(data) {
-  const sheet = getOrCreateSheet();
-  const lastRow = sheet.getLastRow();
-  const poolLabel = data.pool === 'double' ? '雙倍' : '正常';
-  if (lastRow <= 1) return jsonResponse({ status: 'error', message: '無紀錄可刪除' });
-  const values = sheet.getRange(2, 1, lastRow - 1, 3).getValues();
-  for (let i = values.length - 1; i >= 0; i--) {
-    if (Number(values[i][1]) === Number(data.amount) && values[i][2] === poolLabel) {
-      sheet.deleteRow(i + 2);
-      return jsonResponse({ status: 'success', message: '紀錄已刪除' });
-    }
-  }
-  return jsonResponse({ status: 'error', message: '找不到對應的紀錄' });
-}
-
-function formatDateValue(val) {
-  if (val instanceof Date) {
-    const y = val.getFullYear();
-    const m = String(val.getMonth() + 1).padStart(2, '0');
-    const d = String(val.getDate()).padStart(2, '0');
-    return y + '-' + m + '-' + d;
-  }
-  return String(val);
-}
-
-function jsonResponse(obj) {
-  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
-}`;
-
-  try {
-    await navigator.clipboard.writeText(script);
-    showToast('✅ 程式碼已複製到剪貼簿！', 'success');
-  } catch (e) {
-    // Fallback for older browsers
-    const ta = document.createElement('textarea');
-    ta.value = script;
-    ta.style.position = 'fixed';
-    ta.style.opacity = '0';
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand('copy');
-    document.body.removeChild(ta);
-    showToast('✅ 程式碼已複製到剪貼簿！', 'success');
-  }
-}
 
 // ===== Toast =====
 function showToast(msg, type = 'success') {
