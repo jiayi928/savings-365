@@ -1,7 +1,8 @@
-const CACHE_NAME = 'savings365-share-v7';
+const CACHE_NAME = 'savings365-share-v8';
 const ASSETS = [
   './',
   './index.html',
+  './guide.html',
   './style.css',
   './app.js',
   './icon-512.png',

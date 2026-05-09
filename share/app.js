@@ -413,13 +413,44 @@ function updateUrlDisplays() {
   if (backendDisp) backendDisp.textContent = state.scriptUrl ? '✅ 已設定同步後端' : '目前：僅存於手機內';
 }
 
-function copyBackendCode() {
-  const code = document.getElementById('backendCodeBlock').textContent;
-  navigator.clipboard.writeText(code).then(() => {
-    showToast('✅ 程式碼已複製到剪貼簿');
-  }).catch(err => {
-    showToast('❌ 複製失敗', 'error');
-  });
+function exportData() {
+  const data = {
+    deposits: state.deposits,
+    startDate: state.startDate,
+    mode: state.mode,
+    customAmount: state.customAmount
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `365_savings_backup_${new Date().toISOString().split('T')[0]}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('✅ 備份檔已下載');
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (data.deposits) state.deposits = data.deposits;
+      if (data.startDate) state.startDate = data.startDate;
+      if (data.mode) state.mode = data.mode;
+      if (data.customAmount) state.customAmount = data.customAmount;
+      
+      saveToStorage();
+      renderAll();
+      showToast('✅ 資料已成功還原');
+    } catch (err) {
+      showToast('❌ 檔案格式錯誤', 'error');
+    }
+    event.target.value = ''; // Reset input
+  };
+  reader.readAsText(file);
 }
 
 function confirmReset() {

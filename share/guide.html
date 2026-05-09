@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>365 存錢挑戰 - 使用教學與雲端設定</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      padding: 24px 16px 40px;
+      margin: 0;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      margin-bottom: 24px;
+      font-size: 1rem;
+    }
+    .card {
+      background: var(--bg-secondary);
+      padding: 20px;
+      border-radius: 16px;
+      margin-bottom: 24px;
+      border: 1px solid var(--border);
+    }
+    h2 {
+      margin-top: 0;
+      color: var(--accent-blue);
+      margin-bottom: 20px;
+      font-size: 1.5rem;
+    }
+    h3 {
+      color: var(--accent-purple);
+      margin-top: 0;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 1.2rem;
+    }
+    p {
+      margin-bottom: 16px;
+      color: var(--text-secondary);
+    }
+    .code-box {
+      background: #111;
+      padding: 16px;
+      border-radius: 12px;
+      overflow-x: auto;
+      color: #a9b7c6;
+      font-size: 0.85rem;
+      font-family: monospace;
+      border: 1px solid var(--border);
+      max-height: 400px;
+      overflow-y: auto;
+      margin-bottom: 16px;
+    }
+    .step-box {
+      background: var(--bg-primary);
+      padding: 16px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+    }
+    .btn {
+      background: var(--accent-purple);
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px);
+      background: var(--accent-green); color: white; padding: 12px 24px;
+      border-radius: 24px; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); opacity: 0; z-index: 1000;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <a href="index.html" class="back-btn">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      返回設定
+    </a>
+
+    <h2>📖 使用教學與進階設定</h2>
+
+    <div class="card">
+      <h3>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        基本操作方式
+      </h3>
+      <p>
+        1. <b>選擇模式：</b> 前往「設定」挑選挑戰模式（如經典 365 或 加壓雙倍）。<br>
+        2. <b>每日存錢：</b> 到「存款」點擊方塊，或點擊「🎲幫我決定」讓系統抽數字。<br>
+        3. <b>收集成就：</b> 達成特定天數可解鎖專屬徽章！
+      </p>
+    </div>
+
+    <div class="card" style="border-color: var(--accent-purple);">
+      <h3>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        雲端備份設定 (進階/選用)
+      </h3>
+      
+      <div style="padding: 12px; background: rgba(255,59,48,0.1); border-left: 4px solid var(--accent-red); border-radius: 0 8px 8px 0; margin-bottom: 20px; color: var(--text-primary); font-size: 0.9rem;">
+        <b>⚠️ 這是選擇性功能</b><br>
+        所有的紀錄預設都會<b>安全地儲存在你的手機內</b>。如果你覺得設定雲端太麻煩，或者只有手機不方便操作，<b>完全可以略過這個步驟！</b> 若要備份，也可以使用設定頁面的「匯出備份檔」功能來取代。
+      </div>
+
+      <p>如果你希望每次存錢時，資料都能<b>自動同步到你專屬的 Google 試算表</b>，請在電腦上依照以下步驟操作：</p>
+      
+      <div class="step-box">
+        1. 在你的 Google 雲端硬碟建立一個全新的「Google 試算表」。<br>
+        2. 點擊頂部選單 <b>擴充功能</b> ➔ <b>Apps Script</b>。<br>
+        3. 複製下方的程式碼，將原有的內容完全取代並貼上。<br>
+        4. 點擊右上角 <b>部署</b> ➔ <b>新增部署作業</b>。<br>
+        5. 選擇類型為 <b>網頁應用程式</b>。<br>
+        6. 將「執行身分」設為 <b>我</b>，「誰可以存取」設為 <b>所有人</b>，並完成授權。<br>
+        7. 複製部署成功後產生的 <b>網頁應用程式網址 (URL)</b>。<br>
+        8. 回到此 App 的「設定」頁面，點擊「設定同步後端」並貼上網址即可完成連線！
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <h4 style="margin: 0; color: var(--text-primary);">Apps Script 程式碼</h4>
+        <button class="btn" onclick="copyCode()">複製程式碼</button>
+      </div>
+
+      <pre class="code-box" id="codeBlock">const SHEET_NAME = '存款紀錄';
+
+function getOrCreateSheet() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(SHEET_NAME);
+    sheet.getRange('A1:D1').setValues([['日期', '金額', '區間', '備註']]);
+    sheet.getRange('A1:D1').setFontWeight('bold').setBackground('#4a90d9').setFontColor('white');
+    sheet.setFrozenRows(1);
+    sheet.setColumnWidth(1, 120);
+    sheet.setColumnWidth(2, 100);
+    sheet.setColumnWidth(3, 80);
+    sheet.setColumnWidth(4, 150);
+  }
+  return sheet;
+}
+
+function doGet(e) {
+  try {
+    const action = e.parameter.action || 'getAll';
+    if (action === 'getAll') return getAllRecords();
+    return jsonResponse({ status: 'error', message: '未知的 action' });
+  } catch (err) { return jsonResponse({ status: 'error', message: err.message }); }
+}
+
+function doPost(e) {
+  try {
+    const data = JSON.parse(e.postData.contents);
+    if (data.action === 'deposit') return addDeposit(data);
+    if (data.action === 'delete') return deleteDeposit(data);
+    return jsonResponse({ status: 'error', message: '未知的 action' });
+  } catch (err) { return jsonResponse({ status: 'error', message: err.message }); }
+}
+
+function getAllRecords() {
+  const sheet = getOrCreateSheet();
+  const lastRow = sheet.getLastRow();
+  if (lastRow <= 1) return jsonResponse({ status: 'success', records: [] });
+  const data = sheet.getRange(2, 1, lastRow - 1, 4).getValues();
+  const records = data.map(row => ({
+    date: formatDateValue(row[0]), amount: Number(row[1]),
+    pool: row[2] === '雙倍' ? 'double' : 'normal', note: row[3] || ''
+  }));
+  return jsonResponse({ status: 'success', records });
+}
+
+function addDeposit(data) {
+  const sheet = getOrCreateSheet();
+  const poolLabel = data.pool === 'double' ? '雙倍' : '正常';
+  const date = data.date || new Date().toISOString().split('T')[0];
+  const lastRow = sheet.getLastRow();
+  if (lastRow > 1) {
+    const existing = sheet.getRange(2, 1, lastRow - 1, 3).getValues();
+    for (let i = 0; i < existing.length; i++) {
+      if (Number(existing[i][1]) === Number(data.amount) && existing[i][2] === poolLabel) {
+        return jsonResponse({ status: 'error', message: '此金額已存在紀錄' });
+      }
+    }
+  }
+  sheet.appendRow([date, data.amount, poolLabel, '']);
+  if (sheet.getLastRow() > 2) sheet.getRange(2, 1, sheet.getLastRow() - 1, 4).sort({ column: 1, ascending: true });
+  return jsonResponse({ status: 'success', message: '紀錄已新增' });
+}
+
+function deleteDeposit(data) {
+  const sheet = getOrCreateSheet();
+  const lastRow = sheet.getLastRow();
+  const poolLabel = data.pool === 'double' ? '雙倍' : '正常';
+  if (lastRow <= 1) return jsonResponse({ status: 'error', message: '無紀錄可刪除' });
+  const values = sheet.getRange(2, 1, lastRow - 1, 3).getValues();
+  for (let i = values.length - 1; i >= 0; i--) {
+    if (Number(values[i][1]) === Number(data.amount) && values[i][2] === poolLabel) {
+      sheet.deleteRow(i + 2); return jsonResponse({ status: 'success', message: '紀錄已刪除' });
+    }
+  }
+  return jsonResponse({ status: 'error', message: '找不到紀錄' });
+}
+
+function formatDateValue(val) {
+  if (val instanceof Date) {
+    const y = val.getFullYear(), m = String(val.getMonth() + 1).padStart(2, '0'), d = String(val.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+  return String(val);
+}
+
+function jsonResponse(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
+}</pre>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    function copyCode() {
+      const code = document.getElementById('codeBlock').textContent;
+      navigator.clipboard.writeText(code).then(() => {
+        showToast('✅ 程式碼已複製到剪貼簿');
+      }).catch(err => {
+        showToast('❌ 複製失敗');
+      });
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => { toast.classList.remove('show'); }, 2500);
+    }
+  </script>
+</body>
+</html>
