@@ -1,8 +1,10 @@
+// Configuration
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbw2AFfgF7IE6ink_-Bsaee-2kjIce2M1CfU-u6F6gmKcie7AyC4ZY84dwwsggH6kAx8bA/exec';
+
 // State variables
 let currentPeriodStart = null;
 let records = [];
 let userSettings = {
-  gasUrl: '',
   cycleLength: 28,
   periodLength: 5
 };
@@ -28,10 +30,8 @@ const recordForm = document.getElementById('record-form');
 const recordDate = document.getElementById('record-date');
 
 // Settings Elements
-const gasUrlInput = document.getElementById('gas-url');
 const cycleLengthInput = document.getElementById('cycle-length');
 const periodLengthInput = document.getElementById('period-length');
-const btnSaveSettings = document.getElementById('btn-save-settings');
 const btnSaveCycle = document.getElementById('btn-save-cycle');
 const btnClearData = document.getElementById('btn-clear-data');
 
@@ -77,7 +77,6 @@ function loadData() {
   }
 
   // Populate settings form
-  gasUrlInput.value = userSettings.gasUrl;
   cycleLengthInput.value = userSettings.cycleLength;
   periodLengthInput.value = userSettings.periodLength;
 }
@@ -184,12 +183,6 @@ function setupEventListeners() {
   });
 
   // Settings
-  btnSaveSettings.addEventListener('click', () => {
-    userSettings.gasUrl = gasUrlInput.value.trim();
-    saveData();
-    alert('雲端同步設定已儲存！');
-  });
-
   btnSaveCycle.addEventListener('click', () => {
     userSettings.cycleLength = parseInt(cycleLengthInput.value, 10) || 28;
     userSettings.periodLength = parseInt(periodLengthInput.value, 10) || 5;
@@ -423,7 +416,7 @@ function renderCalendar() {
 
 // Cloud Sync
 async function syncToCloud(record) {
-  if (!userSettings.gasUrl) return;
+  if (!GAS_URL) return;
   
   showLoading(true);
   try {
@@ -436,7 +429,7 @@ async function syncToCloud(record) {
       timestamp: new Date().toISOString()
     };
     
-    const response = await fetch(userSettings.gasUrl, {
+    const response = await fetch(GAS_URL, {
       method: 'POST',
       mode: 'no-cors', // Because GAS doesn't return proper CORS headers for JSON usually
       headers: {
