@@ -1,0 +1,16 @@
+{
+  "name": "女孩日記 - 月經紀錄",
+  "short_name": "女孩日記",
+  "description": "記錄並追蹤您的月經週期",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#fff0f3",
+  "theme_color": "#ff8fab",
+  "icons": [
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
