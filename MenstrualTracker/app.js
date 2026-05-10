@@ -59,12 +59,23 @@ function init() {
   }
 }
 
+// Historical Data Initialization
+const historicalDates = ['2013-08-13', '2013-09-17', '2013-10-31', '2013-11-30', '2014-01-18', '2014-02-15', '2014-04-10', '2014-05-21', '2014-06-26', '2014-07-26', '2014-10-12', '2014-11-19', '2015-01-26', '2015-02-24', '2015-04-24', '2015-06-04', '2015-07-08', '2015-07-28', '2015-09-08', '2015-11-26', '2016-01-15', '2016-04-02', '2016-04-28', '2016-06-01', '2016-07-01', '2016-08-13', '2016-09-14', '2016-10-15', '2016-11-25', '2016-12-23', '2017-01-22', '2017-03-02', '2017-04-28', '2017-05-27', '2017-07-14', '2017-09-18', '2017-10-17', '2017-12-19', '2018-01-23', '2018-02-24', '2018-03-30', '2018-05-25', '2018-07-26', '2018-08-28', '2018-09-27', '2018-11-02', '2018-12-07', '2019-03-18', '2019-05-30', '2019-07-04', '2019-08-18', '2019-10-28', '2019-12-07', '2020-01-29', '2020-03-07', '2020-04-26', '2020-07-15', '2020-10-31', '2020-12-04', '2021-01-05', '2021-02-04', '2021-03-20', '2021-05-22', '2021-09-10', '2021-12-03', '2022-01-07', '2022-02-18', '2022-03-20', '2022-07-04', '2022-08-24', '2023-02-04', '2023-03-16', '2023-04-19', '2023-06-06', '2023-07-24', '2023-09-28', '2023-11-23', '2023-12-18', '2024-01-24', '2024-02-26', '2024-04-23', '2024-05-28', '2024-07-03', '2024-08-07', '2024-09-14', '2024-10-26', '2025-02-04', '2025-02-28', '2025-04-15', '2025-05-10', '2025-06-20', '2025-07-26', '2025-08-30', '2025-10-03', '2025-11-01', '2025-12-05', '2026-02-10', '2026-04-05'];
+
 // Data Management
 function loadData() {
   const savedRecords = localStorage.getItem('menstrualRecords');
-  if (savedRecords) {
-    records = JSON.parse(savedRecords);
-  }
+  let loadedRecords = savedRecords ? JSON.parse(savedRecords) : [];
+  
+  // Merge historical data automatically
+  const existingDates = new Set(loadedRecords.map(r => r.date));
+  historicalDates.forEach(date => {
+    if (!existingDates.has(date)) {
+      loadedRecords.push({ date, type: 'start', flow: '中', pain: '無', notes: '匯入歷史資料' });
+    }
+  });
+  loadedRecords.sort((a, b) => new Date(b.date) - new Date(a.date));
+  records = loadedRecords;
 
   const savedSettings = localStorage.getItem('menstrualSettings');
   if (savedSettings) {
@@ -76,9 +87,37 @@ function loadData() {
     currentPeriodStart = savedCurrentStart;
   }
 
+  // Calculate real average cycle from history
+  calculateAverageCycle();
+
   // Populate settings form
   cycleLengthInput.value = userSettings.cycleLength;
   periodLengthInput.value = userSettings.periodLength;
+}
+
+function calculateAverageCycle() {
+  const starts = records.filter(r => r.type === 'start').sort((a, b) => new Date(a.date) - new Date(b.date));
+  if (starts.length < 2) return;
+  
+  let totalDays = 0;
+  let count = 0;
+  
+  for (let i = 1; i < starts.length; i++) {
+    const prev = new Date(starts[i-1].date);
+    const curr = new Date(starts[i].date);
+    const diffDays = Math.round((curr - prev) / (1000 * 60 * 60 * 24));
+    
+    // Filter out skipped months or anomalies (only count 20-45 day cycles)
+    if (diffDays >= 20 && diffDays <= 45) {
+      totalDays += diffDays;
+      count++;
+    }
+  }
+  
+  if (count > 0) {
+    const avg = Math.round(totalDays / count);
+    userSettings.cycleLength = avg;
+  }
 }
 
 function saveData() {
