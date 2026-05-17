@@ -136,7 +136,8 @@
         5. 選擇類型為 <b>網頁應用程式</b>。<br>
         6. 將「執行身分」設為 <b>我</b>，「誰可以存取」設為 <b>所有人</b>，並完成授權。<br>
         7. 複製部署成功後產生的 <b>網頁應用程式網址 (URL)</b>。<br>
-        8. 回到此 App 的「設定」頁面，點擊「設定同步後端」並貼上網址即可完成連線！
+        8. 回到此 App 的「設定」頁面，點擊「設定同步後端」並貼上網址即可完成連線。<br>
+        9. 設定完成後，設定頁面會出現「📊 Google 試算表連結」區塊，貼上試算表網址即可從 App 直接開啟查看。
       </div>
 
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
@@ -234,6 +235,20 @@ function formatDateValue(val) {
 function jsonResponse(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
 }</pre>
+    </div>
+
+    <div class="card" style="border-color: rgba(79,195,247,0.4);">
+      <h3 style="color: var(--accent-blue);">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 17H7A5 5 0 0 1 7 7h2"/><path d="M15 7h2a5 5 0 0 1 0 10h-2"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        📊 Google 試算表連結
+      </h3>
+      <p>完成雲端後端設定後，設定頁面會出現「📊 Google 試算表連結」區塊。從試算表網址列複製連結，貼入後即可從 App 中一鍵開啟来查看所有存款記錄。</p>
+      <div class="step-box" style="margin-bottom: 0;">
+        1. 在 Google 試算表中，從瀏覽器上方的地址列複製網址。<br>
+        2. 回到 App 的「設定」頁面，找到「📊 Google 試算表連結」區塊（需先設定後端才會出現）。<br>
+        3. 點擊「設定連結」，貼上試算表網址带「確認」。<br>
+        4. 下次需要查看記錄時，點擊「開啟試算表」即可直接跟到你的 Google 試算表。
+      </div>
     </div>
   </div>
 

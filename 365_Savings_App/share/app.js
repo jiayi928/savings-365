@@ -409,8 +409,15 @@ function confirmInputModal() {
 function updateUrlDisplays() {
   const sheetDisp = document.getElementById('sheetUrlDisplay');
   const backendDisp = document.getElementById('backendUrlDisplay');
+  const sheetLinkGroup = document.getElementById('sheetLinkGroup');
+
   if (sheetDisp) sheetDisp.textContent = state.sheetUrl ? state.sheetUrl : '尚未設定';
   if (backendDisp) backendDisp.textContent = state.scriptUrl ? '✅ 已設定同步後端' : '目前：僅存於手機內';
+
+  // 只有後端設定後才顯示試算表連結區塊
+  if (sheetLinkGroup) {
+    sheetLinkGroup.style.display = state.scriptUrl ? 'block' : 'none';
+  }
 }
 
 function exportData() {

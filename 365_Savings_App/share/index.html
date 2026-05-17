@@ -129,17 +129,20 @@
         <input type="number" id="customAmountInput" value="100" min="1" style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg-primary); color: var(--text-primary); font-size: 1rem;">
       </div>
       <div class="setting-group">
-        <label>Google 試算表連結 (可選 - 快速開啟)</label>
+        <label>資料同步後端網址 (進階選項)</label>
+        <button class="btn btn-outline" onclick="promptBackendUrl()" style="width: 100%;">設定同步後端</button>
+        <div id="backendUrlDisplay" style="font-size: 0.8rem; color: var(--text-dim); margin-top: 6px; word-break: break-all; padding: 4px;">目前：僅存於手機內</div>
+      </div>
+
+      <!-- 只有設定了後端後才顯示試算表連結 -->
+      <div class="setting-group" id="sheetLinkGroup" style="display:none; margin-top: 16px; padding: 14px; border: 1px solid rgba(79,195,247,0.25); border-radius: 12px; background: rgba(79,195,247,0.05);">
+        <label style="color: var(--accent-blue);">📊 Google 試算表連結</label>
+        <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px; margin-bottom: 10px;">後端已設定，可以貼入你的試算表連結，方便直接開啟查看。</p>
         <div style="display: flex; gap: 8px;">
           <button class="btn btn-outline" onclick="promptSheetUrl()" style="flex:1;">設定連結</button>
           <button class="btn btn-outline" onclick="openSheet()" style="flex:1;">開啟試算表</button>
         </div>
         <div id="sheetUrlDisplay" style="font-size: 0.8rem; color: var(--text-dim); margin-top: 6px; word-break: break-all; padding: 4px;">尚未設定</div>
-      </div>
-      <div class="setting-group" style="margin-top: 16px;">
-        <label>資料同步後端網址 (進階選項)</label>
-        <button class="btn btn-outline" onclick="promptBackendUrl()" style="width: 100%;">設定同步後端</button>
-        <div id="backendUrlDisplay" style="font-size: 0.8rem; color: var(--text-dim); margin-top: 6px; word-break: break-all; padding: 4px;">目前：僅存於手機內</div>
       </div>
 
       <div class="setting-group" style="margin-top: 16px;">
