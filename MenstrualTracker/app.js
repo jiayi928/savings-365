@@ -173,6 +173,7 @@ function setupEventListeners() {
     modalBtnStart.addEventListener('click', async () => {
       if (!selectedDateStr) return;
       
+      const label = selectedLabel; // 儲存所選日期的標籤，避免 closeModal 後變為 null
       const d = new Date(selectedDateStr);
       d.setDate(d.getDate() + 5);
       const endStr = d.toISOString().split('T')[0];
@@ -203,7 +204,7 @@ function setupEventListeners() {
       // 背景非同步同步，不阻塞 UI
       syncToCloud(startRec);
       syncToCloud(endRec);
-      alert(`✅ 已將 ${selectedLabel} 設為開始，並自動記錄 6 天！`);
+      alert(`✅ 已將 ${label} 設為開始，並自動記錄 6 天！`);
     });
   }
 
@@ -211,6 +212,7 @@ function setupEventListeners() {
     modalBtnEnd.addEventListener('click', async () => {
       if (!selectedDateStr) return;
       
+      const label = selectedLabel; // 儲存所選日期的標籤，避免 closeModal 後變為 null
       const endRec = {
         date: selectedDateStr,
         type: 'end',
@@ -228,7 +230,7 @@ function setupEventListeners() {
       
       // 背景非同步同步，不阻塞 UI
       syncToCloud(endRec);
-      alert(`✅ 已將 ${selectedLabel} 設為經期結束！`);
+      alert(`✅ 已將 ${label} 設為經期結束！`);
     });
   }
 
