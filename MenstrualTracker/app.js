@@ -19,8 +19,6 @@ const loadingOverlay = document.getElementById('loading-overlay');
 const chkNotification = document.getElementById('chk-notification');
 
 // Home View Elements
-const btnStartPeriod = document.getElementById('btn-start-period');
-const btnEndPeriod = document.getElementById('btn-end-period');
 const cycleCircle = document.getElementById('cycle-circle');
 const daysCountdown = document.getElementById('days-countdown');
 const circleTitle = document.querySelector('.circle-title');
@@ -160,61 +158,7 @@ function setupEventListeners() {
     });
   });
 
-  // Home Actions
-  btnStartPeriod.addEventListener('click', () => {
-    if (confirm('確定要記錄今天為經期第一天嗎？\n（系統將自動設定 6 天後為結束日期）')) {
-      const today = new Date().toISOString().split('T')[0];
-      const d = new Date(today);
-      d.setDate(d.getDate() + 5);
-      const endDay = d.toISOString().split('T')[0];
-      
-      currentPeriodStart = today;
-      
-      const startRec = {
-        date: today,
-        type: 'start',
-        flow: '中',
-        pain: '無',
-        notes: '經期開始'
-      };
-      const endRec = {
-        date: endDay,
-        type: 'end',
-        flow: '少',
-        pain: '無',
-        notes: '經期結束（自動設定）'
-      };
-      
-      addRecord(startRec);
-      addRecord(endRec);
-      
-      saveData();
-      updateUI();
-      
-      syncToCloud(startRec);
-      syncToCloud(endRec);
-    }
-  });
 
-  btnEndPeriod.addEventListener('click', () => {
-    if (confirm('確定要記錄今天為經期結束嗎？')) {
-      const today = new Date().toISOString().split('T')[0];
-      
-      const endRec = {
-        date: today,
-        type: 'end',
-        flow: '少',
-        pain: '無',
-        notes: '經期結束'
-      };
-      
-      addRecord(endRec);
-      currentPeriodStart = null;
-      saveData();
-      updateUI();
-      syncToCloud(endRec);
-    }
-  });
 
   // Form Submit
   recordForm.addEventListener('submit', async (e) => {
@@ -333,9 +277,6 @@ function updateUI() {
 function updateHomeCard() {
   if (currentPeriodStart) {
     // Currently menstruating
-    btnStartPeriod.classList.add('hidden');
-    btnEndPeriod.classList.remove('hidden');
-    
     cycleCircle.style.borderColor = 'var(--primary)';
     circleTitle.textContent = '經期第';
     
@@ -349,9 +290,6 @@ function updateHomeCard() {
     
   } else {
     // Waiting for next period
-    btnStartPeriod.classList.remove('hidden');
-    btnEndPeriod.classList.add('hidden');
-    
     cycleCircle.style.borderColor = 'var(--primary-light)';
     circleTitle.textContent = '距離下次經期';
     
