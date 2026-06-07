@@ -6,7 +6,8 @@ let currentPeriodStart = null;
 let records = [];
 let userSettings = {
   cycleLength: 28,
-  periodLength: 6
+  periodLength: 6,
+  enableNotifications: false
 };
 let currentMonth = new Date().getMonth();
 let currentYear = new Date().getFullYear();
@@ -15,6 +16,7 @@ let currentYear = new Date().getFullYear();
 const views = document.querySelectorAll('.view');
 const navBtns = document.querySelectorAll('.nav-btn');
 const loadingOverlay = document.getElementById('loading-overlay');
+const chkNotification = document.getElementById('chk-notification');
 
 // Home View Elements
 const btnStartPeriod = document.getElementById('btn-start-period');
@@ -60,6 +62,9 @@ function init() {
 
   // 第一次開啟或每次開啟時，自動與雲端試算表連結並同步資料
   syncFromCloud();
+
+  // 偵測並提醒生理期來潮
+  checkAndNotify();
 }
 
 // Historical Data Initialization
@@ -96,6 +101,7 @@ function loadData() {
   // Populate settings form
   cycleLengthInput.value = userSettings.cycleLength;
   periodLengthInput.value = userSettings.periodLength;
+  chkNotification.checked = userSettings.enableNotifications || false;
 }
 
 function calculateAverageCycle() {
@@ -249,6 +255,37 @@ function setupEventListeners() {
     saveData();
     updateUI();
     alert('週期設定已儲存！');
+  });
+
+  chkNotification.addEventListener('change', async () => {
+    if (chkNotification.checked) {
+      if (!('Notification' in window)) {
+        alert('此瀏覽器不支援通知功能。');
+        chkNotification.checked = false;
+        return;
+      }
+      
+      const permission = await Notification.requestPermission();
+      if (permission === 'granted') {
+        userSettings.enableNotifications = true;
+        saveData();
+        alert('🔔 生理期提醒功能已開啟！');
+        // 開啟時立即測試一封通知
+        new Notification("女孩日記提醒 🌸", {
+          body: "提醒功能已成功啟用！我們會在預測生理期前一天或當天提醒您喔 ❤️",
+          icon: 'icon-512.png'
+        });
+      } else {
+        chkNotification.checked = false;
+        userSettings.enableNotifications = false;
+        saveData();
+        alert('⚠️ 需要通知權限才能啟用此功能。請手動在瀏覽器設定中允許通知！');
+      }
+    } else {
+      userSettings.enableNotifications = false;
+      saveData();
+      alert('🔕 生理期提醒功能已關閉。');
+    }
   });
 
   btnClearData.addEventListener('click', () => {
@@ -750,6 +787,51 @@ async function syncFromCloud() {
     console.error('無法從雲端同步紀錄:', error);
   } finally {
     showLoading(false);
+  }
+}
+
+// 檢查今天是否為生理期預測日並跳出提醒通知
+function checkAndNotify() {
+  if (!userSettings.enableNotifications) return;
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  const lastNotified = localStorage.getItem('lastNotificationDate');
+  
+  // 每天只提醒一次，避免重複打擾
+  if (lastNotified === todayStr) return;
+
+  const startRecords = records.filter(r => r.type === 'start');
+  if (startRecords.length > 0) {
+    const lastStart = new Date(startRecords[0].date);
+    const nextStart = new Date(lastStart);
+    nextStart.setDate(lastStart.getDate() + userSettings.cycleLength);
+    
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    nextStart.setHours(0,0,0,0);
+    
+    const diffTime = nextStart - today;
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+    // 當天或前一天時觸發提醒
+    if (diffDays === 0 || diffDays === 1) {
+      let message = "";
+      if (diffDays === 0) {
+        message = "親愛的，預測妳的經期今天就要開始囉！記得準備好貼身用品，多喝溫水喔 ❤️";
+      } else {
+        message = "親愛的，預測妳的經期明天就要開始囉！記得提前準備好貼身用品與保暖喔 🌸";
+      }
+
+      new Notification("女孩日記提醒 🌸", {
+        body: message,
+        icon: 'icon-512.png',
+        tag: 'menstrual-reminder',
+        requireInteraction: true // 通知會持續停留在畫面上直到手動點選
+      });
+
+      localStorage.setItem('lastNotificationDate', todayStr);
+    }
   }
 }
 
