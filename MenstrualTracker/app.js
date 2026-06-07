@@ -641,14 +641,37 @@ function renderCalendar() {
   const periodDates = new Set();
   const predictedDates = new Set();
   
-  // 1. 整理過去已發生的經期
+  // 1. 整理過去已發生的經期區間並全部塗色
+  const periods = getPeriods();
+  periods.forEach(period => {
+    if (period.start) {
+      const start = new Date(period.start);
+      let end;
+      if (period.end) {
+        end = new Date(period.end);
+      } else {
+        // 如果經期結束日尚未記錄，以設定的經期長度為預設值著色
+        end = new Date(period.start);
+        end.setDate(end.getDate() + userSettings.periodLength - 1);
+      }
+      
+      const current = new Date(start);
+      while (current <= end) {
+        const ds = current.toISOString().split('T')[0];
+        periodDates.add(ds);
+        current.setDate(current.getDate() + 1);
+      }
+    }
+  });
+
+  // 2. 額外將詳細紀錄 (log) 的日期塗色
   records.forEach(r => {
-    if (r.type === 'start' || r.type === 'log') {
+    if (r.type === 'log') {
       periodDates.add(r.date);
     }
   });
 
-  // 2. 如果有設定 currentPeriodStart，把這幾天也塗色
+  // 3. 如果有設定 currentPeriodStart，確保這幾天也被塗色
   if (currentPeriodStart) {
     const start = new Date(currentPeriodStart);
     for(let i=0; i<userSettings.periodLength; i++) {
