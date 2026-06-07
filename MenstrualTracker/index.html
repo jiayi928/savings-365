@@ -34,6 +34,24 @@
         </div>
       </div>
 
+      <!-- 月曆 (首頁) -->
+      <div class="calendar-container">
+        <div class="calendar-header">
+          <button id="prev-month" class="btn-icon"><i class="fa-solid fa-chevron-left"></i></button>
+          <h3 id="calendar-month-year">載入中...</h3>
+          <button id="next-month" class="btn-icon"><i class="fa-solid fa-chevron-right"></i></button>
+        </div>
+        <div class="calendar-weekdays">
+          <div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div>
+        </div>
+        <div id="calendar-days" class="calendar-days"></div>
+        <div class="calendar-legend">
+          <span class="legend-item"><span class="dot dot-period"></span> 經期</span>
+          <span class="legend-item"><span class="dot dot-predicted"></span> 預測期</span>
+        </div>
+        <p class="calendar-hint">💡 點選日期可記錄為月經第一天（自動記錄 6 天）</p>
+      </div>
+
       <div class="recent-records">
         <h3>最近紀錄</h3>
         <div id="records-list" class="records-list">
@@ -78,27 +96,6 @@
       </form>
     </section>
 
-    <!-- View: Calendar (月曆) -->
-    <section id="view-calendar" class="view">
-      <h2 class="section-title">月曆紀錄</h2>
-      <div class="calendar-container">
-        <div class="calendar-header">
-          <button id="prev-month" class="btn-icon"><i class="fa-solid fa-chevron-left"></i></button>
-          <h3 id="calendar-month-year">2026年 5月</h3>
-          <button id="next-month" class="btn-icon"><i class="fa-solid fa-chevron-right"></i></button>
-        </div>
-        <div class="calendar-weekdays">
-          <div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div>
-        </div>
-        <div id="calendar-days" class="calendar-days">
-          <!-- JavaScript 將會在這裡自動生成每一天的格子 -->
-        </div>
-      </div>
-      <div class="calendar-legend">
-        <span class="legend-item"><span class="dot dot-period"></span> 經期</span>
-        <span class="legend-item"><span class="dot dot-predicted"></span> 預測期</span>
-      </div>
-    </section>
 
     <!-- View: Settings / Sync -->
     <section id="view-settings" class="view">
@@ -129,10 +126,6 @@
     <button class="nav-btn active" data-target="view-home">
       <i class="fa-solid fa-house"></i>
       <span>首頁</span>
-    </button>
-    <button class="nav-btn" data-target="view-calendar">
-      <i class="fa-solid fa-calendar-days"></i>
-      <span>月曆</span>
     </button>
     <button class="nav-btn" data-target="view-add">
       <i class="fa-solid fa-plus"></i>

@@ -6,7 +6,7 @@ let currentPeriodStart = null;
 let records = [];
 let userSettings = {
   cycleLength: 28,
-  periodLength: 5
+  periodLength: 6
 };
 let currentMonth = new Date().getMonth();
 let currentYear = new Date().getFullYear();
@@ -426,7 +426,7 @@ function renderCalendar() {
     calendarDays.appendChild(emptyDiv);
   }
   
-  // 每一天的格子
+    // 每一天的格子
   for (let i = 1; i <= daysInMonth; i++) {
     const dayDiv = document.createElement('div');
     dayDiv.className = 'calendar-day';
@@ -448,6 +448,41 @@ function renderCalendar() {
     else if (predictedDates.has(dateStr)) {
       dayDiv.classList.add('predicted');
     }
+
+    // 點選記錄月經第一天（自動記錄 periodLength 天）
+    dayDiv.addEventListener('click', () => {
+      const label = `${currentYear}/${currentMonth + 1}/${i}`;
+      if (confirm(`將 ${label} 設為月經第一天？\n（系統將自動標記後續 ${userSettings.periodLength - 1} 天為經期，共 ${userSettings.periodLength} 天）`)) {
+        // 記錄第一天為 start
+        addRecord({
+          date: dateStr,
+          type: 'start',
+          flow: '中',
+          pain: '無',
+          notes: '由月曆點選記錄'
+        });
+        currentPeriodStart = dateStr;
+
+        // 自動記錄後續天數（第 2 天起到第 periodLength 天）
+        for (let d = 1; d < userSettings.periodLength; d++) {
+          const nextDate = new Date(dateStr);
+          nextDate.setDate(nextDate.getDate() + d);
+          const nextStr = nextDate.toISOString().split('T')[0];
+          addRecord({
+            date: nextStr,
+            type: 'log',
+            flow: '中',
+            pain: '無',
+            notes: `經期第 ${d + 1} 天（自動）`
+          });
+        }
+
+        saveData();
+        updateUI();
+        syncToCloud({ date: dateStr, type: 'start', flow: '中', pain: '無', notes: '由月曆點選記錄' });
+        alert(`✅ 已記錄 ${label} 起共 ${userSettings.periodLength} 天經期！`);
+      }
+    });
     
     calendarDays.appendChild(dayDiv);
   }
