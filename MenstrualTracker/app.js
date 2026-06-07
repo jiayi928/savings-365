@@ -200,8 +200,9 @@ function setupEventListeners() {
       updateUI();
       closeModal();
       
-      await syncToCloud(startRec);
-      await syncToCloud(endRec);
+      // 背景非同步同步，不阻塞 UI
+      syncToCloud(startRec);
+      syncToCloud(endRec);
       alert(`✅ 已將 ${selectedLabel} 設為開始，並自動記錄 6 天！`);
     });
   }
@@ -225,7 +226,8 @@ function setupEventListeners() {
       updateUI();
       closeModal();
       
-      await syncToCloud(endRec);
+      // 背景非同步同步，不阻塞 UI
+      syncToCloud(endRec);
       alert(`✅ 已將 ${selectedLabel} 設為經期結束！`);
     });
   }
@@ -249,7 +251,7 @@ function setupEventListeners() {
   }
 
   // Form Submit
-  recordForm.addEventListener('submit', async (e) => {
+  recordForm.addEventListener('submit', (e) => {
     e.preventDefault();
     
     const date = recordDate.value;
@@ -269,8 +271,8 @@ function setupEventListeners() {
     saveData();
     updateUI();
     
-    // Attempt sync
-    await syncToCloud(record);
+    // 背景同步至雲端
+    syncToCloud(record);
     
     alert('紀錄已儲存！');
     recordForm.reset();
@@ -547,37 +549,44 @@ window.editPeriod = async function(idx) {
   const newEnd = prompt("請輸入結束日期 (YYYY-MM-DD):", period.end || "");
   if (newEnd === null) return; // 按取消
   
-  showLoading(true);
-  try {
-    // 1. 刪除雲端和本機的舊紀錄
-    if (period.startRecord) {
-      records = records.filter(r => !(r.date === period.startRecord.date && r.type === 'start'));
-      await syncToCloud({ date: period.startRecord.date, type: 'start', action: 'delete' });
-    }
-    if (period.endRecord) {
-      records = records.filter(r => !(r.date === period.endRecord.date && r.type === 'end'));
-      await syncToCloud({ date: period.endRecord.date, type: 'end', action: 'delete' });
-    }
-    
-    // 2. 建立新紀錄
-    const startRec = { date: newStart, type: 'start', flow: '中', pain: '無', notes: '修改經期' };
-    addRecord(startRec);
-    await syncToCloud(startRec);
-    
-    if (newEnd) {
-      const endRec = { date: newEnd, type: 'end', flow: '少', pain: '無', notes: '修改經期' };
-      addRecord(endRec);
-      await syncToCloud(endRec);
-    }
-    
-    saveData();
-    updateUI();
-    alert("修改成功！");
-  } catch (err) {
-    alert("修改失敗: " + err);
-  } finally {
-    showLoading(false);
+  // 1. 本機即時刪除舊紀錄並寫入新紀錄
+  if (period.startRecord) {
+    records = records.filter(r => !(r.date === period.startRecord.date && r.type === 'start'));
   }
+  if (period.endRecord) {
+    records = records.filter(r => !(r.date === period.endRecord.date && r.type === 'end'));
+  }
+  
+  const startRec = { date: newStart, type: 'start', flow: '中', pain: '無', notes: '修改經期' };
+  addRecord(startRec);
+  
+  let endRec = null;
+  if (newEnd) {
+    endRec = { date: newEnd, type: 'end', flow: '少', pain: '無', notes: '修改經期' };
+    addRecord(endRec);
+  }
+  
+  saveData();
+  updateUI();
+  
+  // 2. 背景同步，同時（並行）送出多個請求
+  const syncPromises = [];
+  if (period.startRecord) {
+    syncPromises.push(syncToCloud({ date: period.startRecord.date, type: 'start', action: 'delete' }));
+  }
+  if (period.endRecord) {
+    syncPromises.push(syncToCloud({ date: period.endRecord.date, type: 'end', action: 'delete' }));
+  }
+  syncPromises.push(syncToCloud(startRec));
+  if (endRec) {
+    syncPromises.push(syncToCloud(endRec));
+  }
+  
+  Promise.all(syncPromises)
+    .then(() => console.log('修改背景同步成功'))
+    .catch(err => console.error('修改背景同步失敗:', err));
+
+  alert("修改成功！");
 };
 
 // 刪除經期紀錄
@@ -587,29 +596,35 @@ window.deletePeriod = async function(idx) {
   if (!period) return;
   
   if (confirm(`確定要刪除這筆經期紀錄嗎？\n區間: ${period.start} ~ ${period.end || '進行中'}`)) {
-    showLoading(true);
-    try {
-      if (period.startRecord) {
-        records = records.filter(r => !(r.date === period.startRecord.date && r.type === 'start'));
-        await syncToCloud({ date: period.startRecord.date, type: 'start', action: 'delete' });
-      }
-      if (period.endRecord) {
-        records = records.filter(r => !(r.date === period.endRecord.date && r.type === 'end'));
-        await syncToCloud({ date: period.endRecord.date, type: 'end', action: 'delete' });
-      }
-      
-      if (currentPeriodStart === period.start) {
-        currentPeriodStart = null;
-      }
-      
-      saveData();
-      updateUI();
-      alert("刪除成功！");
-    } catch (err) {
-      alert("刪除失敗: " + err);
-    } finally {
-      showLoading(false);
+    // 1. 本機即時刪除
+    if (period.startRecord) {
+      records = records.filter(r => !(r.date === period.startRecord.date && r.type === 'start'));
     }
+    if (period.endRecord) {
+      records = records.filter(r => !(r.date === period.endRecord.date && r.type === 'end'));
+    }
+    
+    if (currentPeriodStart === period.start) {
+      currentPeriodStart = null;
+    }
+    
+    saveData();
+    updateUI();
+    
+    // 2. 背景同步
+    const syncPromises = [];
+    if (period.startRecord) {
+      syncPromises.push(syncToCloud({ date: period.startRecord.date, type: 'start', action: 'delete' }));
+    }
+    if (period.endRecord) {
+      syncPromises.push(syncToCloud({ date: period.endRecord.date, type: 'end', action: 'delete' }));
+    }
+    
+    Promise.all(syncPromises)
+      .then(() => console.log('刪除背景同步成功'))
+      .catch(err => console.error('刪除背景同步失敗:', err));
+
+    alert("刪除成功！");
   }
 };
 
@@ -709,20 +724,20 @@ function renderCalendar() {
 async function syncToCloud(record) {
   if (!GAS_URL) return;
   
-  showLoading(true);
   try {
     const payload = {
       date: record.date,
       type: record.type,
-      flow: record.flow,
-      pain: record.pain,
-      notes: record.notes,
+      flow: record.flow || '',
+      pain: record.pain || '',
+      notes: record.notes || '',
+      action: record.action || 'create', // 修正此處，確實將動作發送至雲端
       timestamp: new Date().toISOString()
     };
     
-    const response = await fetch(GAS_URL, {
+    await fetch(GAS_URL, {
       method: 'POST',
-      mode: 'no-cors', // Because GAS doesn't return proper CORS headers for JSON usually
+      mode: 'no-cors',
       headers: {
         'Content-Type': 'application/json',
       },
@@ -732,9 +747,6 @@ async function syncToCloud(record) {
     console.log('Sync dispatched');
   } catch (error) {
     console.error('Sync failed:', error);
-    alert('雲端同步失敗，但已儲存於本機。請檢查網路或網址設定。');
-  } finally {
-    showLoading(false);
   }
 }
 
