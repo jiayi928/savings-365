@@ -148,6 +148,19 @@
     <p>處理中...</p>
   </div>
 
+  <!-- Calendar Action Modal -->
+  <div id="calendar-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+      <h3 class="modal-title">生理期記錄</h3>
+      <p id="modal-date-label" class="modal-date-label">----/--/--</p>
+      <div class="modal-buttons">
+        <button id="modal-btn-start" class="btn btn-primary btn-block"><i class="fa-solid fa-droplet"></i> 🩸 經期開始 (自動標記 6 天)</button>
+        <button id="modal-btn-end" class="btn btn-secondary btn-block"><i class="fa-solid fa-check"></i> ✅ 經期結束</button>
+        <button id="modal-btn-cancel" class="btn btn-text btn-block">取消</button>
+      </div>
+    </div>
+  </div>
+
   <script src="app.js"></script>
 </body>
 </html>

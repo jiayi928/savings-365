@@ -42,6 +42,16 @@ const calendarDays = document.getElementById('calendar-days');
 const btnPrevMonth = document.getElementById('prev-month');
 const btnNextMonth = document.getElementById('next-month');
 
+// Modal Elements
+const calendarModal = document.getElementById('calendar-modal');
+const modalDateLabel = document.getElementById('modal-date-label');
+const modalBtnStart = document.getElementById('modal-btn-start');
+const modalBtnEnd = document.getElementById('modal-btn-end');
+const modalBtnCancel = document.getElementById('modal-btn-cancel');
+
+let selectedDateStr = null;
+let selectedLabel = null;
+
 // Initialize
 function init() {
   loadData();
@@ -157,9 +167,85 @@ function setupEventListeners() {
         }
       });
     });
-  });
+  // Modal 按鈕事件
+  if (modalBtnStart) {
+    modalBtnStart.addEventListener('click', async () => {
+      if (!selectedDateStr) return;
+      
+      const d = new Date(selectedDateStr);
+      d.setDate(d.getDate() + 5);
+      const endStr = d.toISOString().split('T')[0];
+      
+      const startRec = {
+        date: selectedDateStr,
+        type: 'start',
+        flow: '中',
+        pain: '無',
+        notes: '月曆點選開始'
+      };
+      const endRec = {
+        date: endStr,
+        type: 'end',
+        flow: '少',
+        pain: '無',
+        notes: '經期結束（自動設定）'
+      };
+      
+      addRecord(startRec);
+      addRecord(endRec);
+      currentPeriodStart = selectedDateStr;
+      
+      saveData();
+      updateUI();
+      closeModal();
+      
+      await syncToCloud(startRec);
+      await syncToCloud(endRec);
+      alert(`✅ 已將 ${selectedLabel} 設為開始，並自動記錄 6 天！`);
+    });
+  }
 
+  if (modalBtnEnd) {
+    modalBtnEnd.addEventListener('click', async () => {
+      if (!selectedDateStr) return;
+      
+      const endRec = {
+        date: selectedDateStr,
+        type: 'end',
+        flow: '少',
+        pain: '無',
+        notes: '月曆點選結束'
+      };
+      
+      addRecord(endRec);
+      currentPeriodStart = null;
+      
+      saveData();
+      updateUI();
+      closeModal();
+      
+      await syncToCloud(endRec);
+      alert(`✅ 已將 ${selectedLabel} 設為經期結束！`);
+    });
+  }
 
+  if (modalBtnCancel) {
+    modalBtnCancel.addEventListener('click', closeModal);
+  }
+
+  if (calendarModal) {
+    calendarModal.addEventListener('click', (e) => {
+      if (e.target === calendarModal) closeModal();
+    });
+  }
+
+  function closeModal() {
+    if (calendarModal) {
+      calendarModal.classList.add('hidden');
+    }
+    selectedDateStr = null;
+    selectedLabel = null;
+  }
 
   // Form Submit
   recordForm.addEventListener('submit', async (e) => {
@@ -602,56 +688,15 @@ function renderCalendar() {
       dayDiv.classList.add('predicted');
     }
 
-    // 點選月曆日期，選擇記錄開始或結束
+    // 點選月曆日期，打開自訂選擇視窗
     dayDiv.addEventListener('click', () => {
-      const label = `${currentYear}/${currentMonth + 1}/${i}`;
-      const choice = prompt(`請選擇要記錄的類型：\n1. 🩸 記錄此日為「經期開始」 (自動標記 6 天)\n2. ✅ 記錄此日為「經期結束」\n\n(請輸入 1 或 2，輸入其他取消)`);
-      
-      if (choice === '1') {
-        const d = new Date(dateStr);
-        d.setDate(d.getDate() + 5);
-        const endStr = d.toISOString().split('T')[0];
-        
-        const startRec = {
-          date: dateStr,
-          type: 'start',
-          flow: '中',
-          pain: '無',
-          notes: '月曆點選開始'
-        };
-        const endRec = {
-          date: endStr,
-          type: 'end',
-          flow: '少',
-          pain: '無',
-          notes: '經期結束（自動設定）'
-        };
-        
-        addRecord(startRec);
-        addRecord(endRec);
-        currentPeriodStart = dateStr;
-        
-        saveData();
-        updateUI();
-        syncToCloud(startRec);
-        syncToCloud(endRec);
-        alert(`✅ 已將 ${label} 設為開始，並自動記錄 6 天！`);
-      } else if (choice === '2') {
-        const endRec = {
-          date: dateStr,
-          type: 'end',
-          flow: '少',
-          pain: '無',
-          notes: '月曆點選結束'
-        };
-        
-        addRecord(endRec);
-        currentPeriodStart = null;
-        
-        saveData();
-        updateUI();
-        syncToCloud(endRec);
-        alert(`✅ 已將 ${label} 設為經期結束！`);
+      selectedDateStr = dateStr;
+      selectedLabel = `${currentYear}/${currentMonth + 1}/${i}`;
+      if (modalDateLabel) {
+        modalDateLabel.textContent = selectedLabel;
+      }
+      if (calendarModal) {
+        calendarModal.classList.remove('hidden');
       }
     });
     
