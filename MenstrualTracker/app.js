@@ -33,6 +33,7 @@ const recordDate = document.getElementById('record-date');
 const cycleLengthInput = document.getElementById('cycle-length');
 const periodLengthInput = document.getElementById('period-length');
 const btnSaveCycle = document.getElementById('btn-save-cycle');
+const btnSyncData = document.getElementById('btn-sync-data');
 const btnClearData = document.getElementById('btn-clear-data');
 
 // Calendar Elements
@@ -231,6 +232,27 @@ function setupEventListeners() {
       alert('🔕 生理期提醒功能已關閉。');
     }
   });
+
+  if (btnSyncData) {
+    btnSyncData.addEventListener('click', async () => {
+      showLoading(true);
+      try {
+        await syncFromCloud();
+        alert('同步完成！即將重新載入網頁以套用最新更新。');
+        // 要求 Service Worker 更新快取，並重整頁面
+        if ('serviceWorker' in navigator) {
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          for (let reg of registrations) {
+            await reg.update();
+          }
+        }
+        window.location.reload(true);
+      } catch (err) {
+        showLoading(false);
+        alert('更新失敗，請檢查網路連線。');
+      }
+    });
+  }
 
   btnClearData.addEventListener('click', () => {
     if (confirm('警告：確定要清除本機所有資料嗎？這不會刪除雲端上的資料。')) {
