@@ -156,21 +156,37 @@ function setupEventListeners() {
 
   // Home Actions
   btnStartPeriod.addEventListener('click', () => {
-    if (confirm('確定要記錄今天為經期第一天嗎？')) {
+    if (confirm('確定要記錄今天為經期第一天嗎？\n（系統將自動設定 6 天後為結束日期）')) {
       const today = new Date().toISOString().split('T')[0];
+      const d = new Date(today);
+      d.setDate(d.getDate() + 5);
+      const endDay = d.toISOString().split('T')[0];
+      
       currentPeriodStart = today;
       
-      // Also add a basic record
-      addRecord({
+      const startRec = {
         date: today,
         type: 'start',
         flow: '中',
         pain: '無',
         notes: '經期開始'
-      });
+      };
+      const endRec = {
+        date: endDay,
+        type: 'end',
+        flow: '少',
+        pain: '無',
+        notes: '經期結束（自動設定）'
+      };
+      
+      addRecord(startRec);
+      addRecord(endRec);
       
       saveData();
       updateUI();
+      
+      syncToCloud(startRec);
+      syncToCloud(endRec);
     }
   });
 
@@ -178,17 +194,19 @@ function setupEventListeners() {
     if (confirm('確定要記錄今天為經期結束嗎？')) {
       const today = new Date().toISOString().split('T')[0];
       
-      addRecord({
+      const endRec = {
         date: today,
         type: 'end',
         flow: '少',
         pain: '無',
         notes: '經期結束'
-      });
+      };
       
+      addRecord(endRec);
       currentPeriodStart = null;
       saveData();
       updateUI();
+      syncToCloud(endRec);
     }
   });
 
@@ -335,46 +353,181 @@ function updateHomeCard() {
   }
 }
 
+// 計算並抓取成對的經期區間
+function getPeriods() {
+  const sorted = [...records].sort((a, b) => new Date(a.date) - new Date(b.date));
+  const periods = [];
+  let currentPeriod = null;
+  
+  sorted.forEach(r => {
+    if (r.type === 'start') {
+      if (currentPeriod) {
+        // 前一次經期尚未關閉，自動計算一個結束日 (start + 5 days)
+        const autoEnd = new Date(currentPeriod.start);
+        autoEnd.setDate(autoEnd.getDate() + 5);
+        currentPeriod.end = autoEnd.toISOString().split('T')[0];
+        periods.push(currentPeriod);
+      }
+      currentPeriod = {
+        start: r.date,
+        end: null,
+        startRecord: r,
+        endRecord: null
+      };
+    } else if (r.type === 'end') {
+      if (currentPeriod) {
+        currentPeriod.end = r.date;
+        currentPeriod.endRecord = r;
+        periods.push(currentPeriod);
+        currentPeriod = null;
+      } else {
+        // 孤立的結束紀錄，往前自動推算 5 天作為開始日
+        const autoStart = new Date(r.date);
+        autoStart.setDate(autoStart.getDate() - 5);
+        periods.push({
+          start: autoStart.toISOString().split('T')[0],
+          end: r.date,
+          startRecord: null,
+          endRecord: r
+        });
+      }
+    }
+  });
+  
+  if (currentPeriod) {
+    // 仍在進行中的經期，如果是最近的就保留 null，否則自動給定一個結束日
+    const start = new Date(currentPeriod.start);
+    const today = new Date();
+    const diffDays = Math.round((today - start) / (1000 * 60 * 60 * 24));
+    if (diffDays > 10) {
+      const autoEnd = new Date(currentPeriod.start);
+      autoEnd.setDate(autoEnd.getDate() + 5);
+      currentPeriod.end = autoEnd.toISOString().split('T')[0];
+    }
+    periods.push(currentPeriod);
+  }
+  
+  // 依日期從新到舊排序
+  return periods.sort((a, b) => new Date(b.start) - new Date(a.start));
+}
+
 function updateRecordsList() {
   recordsList.innerHTML = '';
   
-  if (records.length === 0) {
+  const periods = getPeriods();
+  
+  if (periods.length === 0) {
     recordsList.innerHTML = '<div class="empty-state">目前還沒有紀錄喔！</div>';
     return;
   }
   
-  // Show only last 10 records on home
-  const displayRecords = records.slice(0, 10);
+  // 顯示最近的 10 次經期
+  const displayPeriods = periods.slice(0, 10);
   
-  displayRecords.forEach(record => {
+  displayPeriods.forEach((period, idx) => {
     const div = document.createElement('div');
     div.className = 'record-item';
     
-    let typeLabel = '';
-    let typeColor = '';
-    
-    if (record.type === 'start') {
-      typeLabel = '經期開始';
-      typeColor = 'var(--primary-dark)';
-    } else if (record.type === 'end') {
-      typeLabel = '經期結束';
-      typeColor = 'var(--success)';
+    let daysText = '';
+    if (period.end) {
+      const diff = Math.round((new Date(period.end) - new Date(period.start)) / (1000 * 60 * 60 * 24)) + 1;
+      daysText = `共 ${diff} 天`;
     } else {
-      typeLabel = '日常紀錄';
-      typeColor = 'var(--text-muted)';
+      daysText = '進行中';
     }
     
     div.innerHTML = `
-      <div>
-        <div class="record-date">${record.date}</div>
-        <div class="record-details">血量: ${record.flow || '-'} | 痛經: ${record.pain || '-'}</div>
+      <div class="record-info">
+        <div class="record-date">🌸 ${period.start} ~ ${period.end || '進行中'}</div>
+        <div class="record-details">${daysText}</div>
       </div>
-      <div class="record-type" style="color: ${typeColor}; border-color: ${typeColor}; background: transparent; border: 1px solid ${typeColor}">${typeLabel}</div>
+      <div class="record-actions">
+        <button class="btn-action edit-btn" onclick="editPeriod(${idx})"><i class="fa-solid fa-pen"></i> 修改</button>
+        <button class="btn-action delete-btn" onclick="deletePeriod(${idx})"><i class="fa-solid fa-trash"></i> 刪除</button>
+      </div>
     `;
     
     recordsList.appendChild(div);
   });
 }
+
+// 修改經期紀錄
+window.editPeriod = async function(idx) {
+  const periods = getPeriods();
+  const period = periods[idx];
+  if (!period) return;
+  
+  const newStart = prompt("請輸入開始日期 (YYYY-MM-DD):", period.start);
+  if (!newStart) return;
+  
+  const newEnd = prompt("請輸入結束日期 (YYYY-MM-DD):", period.end || "");
+  if (newEnd === null) return; // 按取消
+  
+  showLoading(true);
+  try {
+    // 1. 刪除雲端和本機的舊紀錄
+    if (period.startRecord) {
+      records = records.filter(r => !(r.date === period.startRecord.date && r.type === 'start'));
+      await syncToCloud({ date: period.startRecord.date, type: 'start', action: 'delete' });
+    }
+    if (period.endRecord) {
+      records = records.filter(r => !(r.date === period.endRecord.date && r.type === 'end'));
+      await syncToCloud({ date: period.endRecord.date, type: 'end', action: 'delete' });
+    }
+    
+    // 2. 建立新紀錄
+    const startRec = { date: newStart, type: 'start', flow: '中', pain: '無', notes: '修改經期' };
+    addRecord(startRec);
+    await syncToCloud(startRec);
+    
+    if (newEnd) {
+      const endRec = { date: newEnd, type: 'end', flow: '少', pain: '無', notes: '修改經期' };
+      addRecord(endRec);
+      await syncToCloud(endRec);
+    }
+    
+    saveData();
+    updateUI();
+    alert("修改成功！");
+  } catch (err) {
+    alert("修改失敗: " + err);
+  } finally {
+    showLoading(false);
+  }
+};
+
+// 刪除經期紀錄
+window.deletePeriod = async function(idx) {
+  const periods = getPeriods();
+  const period = periods[idx];
+  if (!period) return;
+  
+  if (confirm(`確定要刪除這筆經期紀錄嗎？\n區間: ${period.start} ~ ${period.end || '進行中'}`)) {
+    showLoading(true);
+    try {
+      if (period.startRecord) {
+        records = records.filter(r => !(r.date === period.startRecord.date && r.type === 'start'));
+        await syncToCloud({ date: period.startRecord.date, type: 'start', action: 'delete' });
+      }
+      if (period.endRecord) {
+        records = records.filter(r => !(r.date === period.endRecord.date && r.type === 'end'));
+        await syncToCloud({ date: period.endRecord.date, type: 'end', action: 'delete' });
+      }
+      
+      if (currentPeriodStart === period.start) {
+        currentPeriodStart = null;
+      }
+      
+      saveData();
+      updateUI();
+      alert("刪除成功！");
+    } catch (err) {
+      alert("刪除失敗: " + err);
+    } finally {
+      showLoading(false);
+    }
+  }
+};
 
 function renderCalendar() {
   calendarDays.innerHTML = '';
@@ -452,38 +605,56 @@ function renderCalendar() {
       dayDiv.classList.add('predicted');
     }
 
-    // 點選記錄月經第一天（自動記錄 periodLength 天）
+    // 點選月曆日期，選擇記錄開始或結束
     dayDiv.addEventListener('click', () => {
       const label = `${currentYear}/${currentMonth + 1}/${i}`;
-      if (confirm(`將 ${label} 設為月經第一天？\n（系統將自動標記後續 ${userSettings.periodLength - 1} 天為經期，共 ${userSettings.periodLength} 天）`)) {
-        // 記錄第一天為 start
-        addRecord({
+      const choice = prompt(`請選擇要記錄的類型：\n1. 🩸 記錄此日為「經期開始」 (自動標記 6 天)\n2. ✅ 記錄此日為「經期結束」\n\n(請輸入 1 或 2，輸入其他取消)`);
+      
+      if (choice === '1') {
+        const d = new Date(dateStr);
+        d.setDate(d.getDate() + 5);
+        const endStr = d.toISOString().split('T')[0];
+        
+        const startRec = {
           date: dateStr,
           type: 'start',
           flow: '中',
           pain: '無',
-          notes: '由月曆點選記錄'
-        });
+          notes: '月曆點選開始'
+        };
+        const endRec = {
+          date: endStr,
+          type: 'end',
+          flow: '少',
+          pain: '無',
+          notes: '經期結束（自動設定）'
+        };
+        
+        addRecord(startRec);
+        addRecord(endRec);
         currentPeriodStart = dateStr;
-
-        // 自動記錄後續天數（第 2 天起到第 periodLength 天）
-        for (let d = 1; d < userSettings.periodLength; d++) {
-          const nextDate = new Date(dateStr);
-          nextDate.setDate(nextDate.getDate() + d);
-          const nextStr = nextDate.toISOString().split('T')[0];
-          addRecord({
-            date: nextStr,
-            type: 'log',
-            flow: '中',
-            pain: '無',
-            notes: `經期第 ${d + 1} 天（自動）`
-          });
-        }
-
+        
         saveData();
         updateUI();
-        syncToCloud({ date: dateStr, type: 'start', flow: '中', pain: '無', notes: '由月曆點選記錄' });
-        alert(`✅ 已記錄 ${label} 起共 ${userSettings.periodLength} 天經期！`);
+        syncToCloud(startRec);
+        syncToCloud(endRec);
+        alert(`✅ 已將 ${label} 設為開始，並自動記錄 6 天！`);
+      } else if (choice === '2') {
+        const endRec = {
+          date: dateStr,
+          type: 'end',
+          flow: '少',
+          pain: '無',
+          notes: '月曆點選結束'
+        };
+        
+        addRecord(endRec);
+        currentPeriodStart = null;
+        
+        saveData();
+        updateUI();
+        syncToCloud(endRec);
+        alert(`✅ 已將 ${label} 設為經期結束！`);
       }
     });
     

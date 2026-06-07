@@ -263,7 +263,7 @@ input:focus, textarea:focus {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 0;
+  padding: 14px 0;
   border-bottom: 1px solid var(--primary-light);
 }
 
@@ -271,24 +271,56 @@ input:focus, textarea:focus {
   border-bottom: none;
 }
 
+.record-info {
+  text-align: left;
+}
+
 .record-date {
   font-weight: 600;
   color: var(--primary-dark);
+  font-size: 0.95rem;
+  margin-bottom: 4px;
 }
 
 .record-details {
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   color: var(--text-muted);
-  display: flex;
-  gap: 10px;
 }
 
-.record-type {
-  background: var(--primary-light);
-  padding: 2px 8px;
-  border-radius: 12px;
+.record-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-action {
+  background: transparent;
+  border: 1px solid #ffe5ec;
+  padding: 6px 12px;
   font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.edit-btn {
   color: var(--primary-dark);
+  border-color: var(--primary-light);
+}
+.edit-btn:hover {
+  background: var(--primary-light);
+}
+
+.delete-btn {
+  color: var(--danger);
+  border-color: #ffccc7;
+}
+.delete-btn:hover {
+  background: #fff1f0;
+  border-color: var(--danger);
 }
 
 .empty-state {
