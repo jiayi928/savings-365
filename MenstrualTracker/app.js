@@ -57,6 +57,9 @@ function init() {
       .then(reg => console.log('Service Worker Registered'))
       .catch(err => console.log('Service Worker Registration Failed', err));
   }
+
+  // 第一次開啟或每次開啟時，自動與雲端試算表連結並同步資料
+  syncFromCloud();
 }
 
 // Historical Data Initialization
@@ -526,6 +529,56 @@ function showLoading(show) {
     loadingOverlay.classList.remove('hidden');
   } else {
     loadingOverlay.classList.add('hidden');
+  }
+}
+
+// 從雲端試算表同步資料回本機
+async function syncFromCloud() {
+  if (!GAS_URL) return;
+  
+  showLoading(true);
+  try {
+    const response = await fetch(GAS_URL);
+    if (!response.ok) throw new Error('雲端連線異常');
+    
+    const cloudRecords = await response.json();
+    if (Array.isArray(cloudRecords) && cloudRecords.length > 0) {
+      // 比對本機與雲端，把本機沒有的紀錄塞進去
+      const localKeys = new Set(records.map(r => `${r.date}_${r.type}`));
+      let hasUpdates = false;
+      
+      cloudRecords.forEach(cRecord => {
+        const key = `${cRecord.date}_${cRecord.type}`;
+        if (!localKeys.has(key)) {
+          records.push(cRecord);
+          hasUpdates = true;
+        }
+      });
+      
+      if (hasUpdates) {
+        // 重新排序並儲存
+        records.sort((a, b) => new Date(b.date) - new Date(a.date));
+        
+        // 自動判斷目前是否在生理期中
+        const lastStart = records.find(r => r.type === 'start');
+        const lastEnd = records.find(r => r.type === 'end');
+        if (lastStart) {
+          if (!lastEnd || new Date(lastStart.date) > new Date(lastEnd.date)) {
+            currentPeriodStart = lastStart.date;
+          } else {
+            currentPeriodStart = null;
+          }
+        }
+        
+        saveData();
+        updateUI();
+        console.log('與雲端同步完成，已更新本機紀錄！');
+      }
+    }
+  } catch (error) {
+    console.error('無法從雲端同步紀錄:', error);
+  } finally {
+    showLoading(false);
   }
 }
 
