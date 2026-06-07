@@ -167,6 +167,7 @@ function setupEventListeners() {
         }
       });
     });
+  });
   // Modal 按鈕事件
   if (modalBtnStart) {
     modalBtnStart.addEventListener('click', async () => {
