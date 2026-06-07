@@ -24,7 +24,11 @@ function doPost(e) {
       data.notes || ''
     ]);
     
-    return ContentService.createTextOutput(JSON.stringify({"status": "success", "message": "Record added"}))
+    // 自動排序：依據第二欄「日期」由新到舊 (降冪) 排序
+    // 因為上面有設定凍結第一列標題，所以排序時標題不會被移位
+    sheet.sort(2, false);
+    
+    return ContentService.createTextOutput(JSON.stringify({"status": "success", "message": "Record added and sorted"}))
                          .setMimeType(ContentService.MimeType.JSON);
                          
   } catch (error) {
