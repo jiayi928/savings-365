@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Merger - 專業本地端 PDF 合併工具</title>
+    
+    <!-- Meta tags for SEO & UX -->
+    <meta name="description" content="一個完全在瀏覽器本地執行的專業 PDF 合併工具。拖曳多個 PDF 檔案、自由排序、選擇特定頁面範圍，極速整合，100% 保障您的隱私與文件安全。">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons for premium visual icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- pdf-lib library from CDN -->
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    
+    <!-- Custom styling -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- Header -->
+        <header>
+            <h1>PDF Merger</h1>
+            <p>輕鬆合併您的 PDF 檔案，自由排序與挑選頁面</p>
+        </header>
+
+        <!-- Security and privacy badge -->
+        <div class="security-badge">
+            <i data-lucide="shield-check"></i>
+            <span>100% 本地處理：檔案完全在您的瀏覽器記憶體中合併，絕不上傳到任何伺服器。</span>
+        </div>
+
+        <!-- Upload Dropzone -->
+        <div class="glass-card drop-zone" id="dropZone">
+            <div class="drop-zone-icon-wrapper">
+                <i data-lucide="file-up"></i>
+            </div>
+            <h3>拖曳 PDF 或圖片檔案至此處</h3>
+            <p>或是點擊此處瀏覽您的電腦檔案</p>
+            <p style="font-size: 0.8rem; color: rgba(255,255,255,0.3)">支援多個 PDF 及圖片 (PNG, JPG) 同時選取</p>
+            <input type="file" id="fileInput" class="file-input" accept="application/pdf, image/png, image/jpeg, image/jpg" multiple>
+        </div>
+
+        <!-- File List & Reorder Section -->
+        <div class="glass-card file-list-section" id="fileListSection">
+            <div class="section-title">
+                <i data-lucide="list-ordered" style="color: var(--primary)"></i>
+                <span>已加入的檔案清單 (可拖曳或使用按鈕調整順序)</span>
+            </div>
+            <ul class="file-list" id="fileList">
+                <!-- Dynamically populated files -->
+            </ul>
+        </div>
+
+        <!-- Options and Action Section -->
+        <div class="glass-card config-section" id="configSection">
+            <div class="config-grid">
+                <div class="filename-input-wrapper">
+                    <label class="filename-input-label" for="filenameInput">輸出檔案名稱</label>
+                    <div class="filename-input-container">
+                        <i data-lucide="file-text"></i>
+                        <input type="text" id="filenameInput" class="filename-input" value="115財產所得清單_合併">
+                        <span class="filename-suffix">.pdf</span>
+                    </div>
+                </div>
+                
+                <button class="merge-btn" id="mergeBtn">
+                    <i data-lucide="combine"></i>
+                    <span>開始合併並下載</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Processing / Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <div class="loading-text" id="loadingText">正在處理 PDF 檔案...</div>
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error/Warning Toast Notification -->
+    <div class="toast" id="toast">
+        <i data-lucide="alert-triangle"></i>
+        <span id="toastText">發生錯誤，請檢查檔案</span>
+    </div>
+
+    <!-- App Logic script -->
+    <script src="app.js"></script>
+    <script>
+        // Initialize Lucide Icons for markup
+        lucide.createIcons();
+    </script>
+</body>
+</html>

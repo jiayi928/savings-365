@@ -5,3 +5,7 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+
+# Keys & credentials
+credentials.json
+gcp-oauth.keys.json
