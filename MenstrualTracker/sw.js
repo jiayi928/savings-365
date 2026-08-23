@@ -1,4 +1,4 @@
-const CACHE_NAME = 'menstrual-tracker-v5';
+const CACHE_NAME = 'menstrual-tracker-v6';
 const urlsToCache = [
   './',
   './index.html',
@@ -45,6 +45,9 @@ self.addEventListener('fetch', event => {
             return response;
           }
         );
+      }).catch(() => {
+        // 當網路請求失敗（離線或連線異常）時，傳回快取中的首頁作為備用
+        return caches.match('./') || caches.match('./index.html');
       })
   );
 });
