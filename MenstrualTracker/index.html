@@ -98,6 +98,15 @@
 
       <div class="settings-card">
         <h3>個人週期設定</h3>
+        <div class="form-group" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid var(--primary-light); padding-bottom: 12px;">
+          <label style="margin-bottom: 0;">自動計算週期與經期</label>
+          <input type="checkbox" id="chk-auto-calculate" style="width: 24px; height: 24px; cursor: pointer;">
+        </div>
+        <div id="auto-stats-box" class="stats-summary" style="margin-bottom: 15px; padding: 12px; background-color: var(--primary-light); border-radius: var(--radius-sm); font-size: 0.9rem; text-align: left; color: var(--text-main);">
+          <p style="font-weight: bold; margin-bottom: 6px;">📊 系統分析歷史紀錄：</p>
+          <p style="margin: 4px 0 0 10px;">• 平均月經週期：<strong id="stat-cycle-length">--</strong> 天 (計算自 <span id="stat-cycle-count">0</span> 次區間)</p>
+          <p style="margin: 4px 0 0 10px;">• 平均經期長度：<strong id="stat-period-length">--</strong> 天 (計算自 <span id="stat-period-count">0</span> 次紀錄)</p>
+        </div>
         <div class="form-group">
           <label>平均週期長度（天）</label>
           <input type="number" id="cycle-length" value="28" min="20" max="45">

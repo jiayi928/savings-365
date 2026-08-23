@@ -7,7 +7,14 @@ let records = [];
 let userSettings = {
   cycleLength: 28,
   periodLength: 6,
-  enableNotifications: false
+  enableNotifications: false,
+  autoCalculate: true
+};
+let calculatedStats = {
+  cycleLength: 28,
+  periodLength: 6,
+  cycleCount: 0,
+  periodCount: 0
 };
 let currentMonth = new Date().getMonth();
 let currentYear = new Date().getFullYear();
@@ -30,6 +37,11 @@ const recordForm = document.getElementById('record-form');
 const recordDate = document.getElementById('record-date');
 
 // Settings Elements
+const chkAutoCalculate = document.getElementById('chk-auto-calculate');
+const statCycleLength = document.getElementById('stat-cycle-length');
+const statCycleCount = document.getElementById('stat-cycle-count');
+const statPeriodLength = document.getElementById('stat-period-length');
+const statPeriodCount = document.getElementById('stat-period-count');
 const cycleLengthInput = document.getElementById('cycle-length');
 const periodLengthInput = document.getElementById('period-length');
 const btnSaveCycle = document.getElementById('btn-save-cycle');
@@ -104,38 +116,54 @@ function loadData() {
     currentPeriodStart = savedCurrentStart;
   }
 
-  // Calculate real average cycle from history
-  calculateAverageCycle();
+  // Calculate real averages from history
+  calculateAverages();
+
+  // If autoCalculate is enabled, override settings values
+  if (userSettings.autoCalculate) {
+    userSettings.cycleLength = calculatedStats.cycleLength;
+    userSettings.periodLength = calculatedStats.periodLength;
+  }
 
   // Populate settings form
   cycleLengthInput.value = userSettings.cycleLength;
   periodLengthInput.value = userSettings.periodLength;
   chkNotification.checked = userSettings.enableNotifications || false;
+  if (chkAutoCalculate) {
+    chkAutoCalculate.checked = userSettings.autoCalculate;
+  }
 }
 
-function calculateAverageCycle() {
-  const starts = records.filter(r => r.type === 'start').sort((a, b) => new Date(a.date) - new Date(b.date));
-  if (starts.length < 2) return;
+function calculateAverages() {
+  const periods = getPeriods();
   
-  let totalDays = 0;
-  let count = 0;
-  
-  for (let i = 1; i < starts.length; i++) {
-    const prev = new Date(starts[i-1].date);
-    const curr = new Date(starts[i].date);
-    const diffDays = Math.round((curr - prev) / (1000 * 60 * 60 * 24));
-    
-    // Filter out skipped months or anomalies (only count 20-45 day cycles)
-    if (diffDays >= 20 && diffDays <= 45) {
-      totalDays += diffDays;
-      count++;
+  // Calculate average cycle length
+  let totalCycleDays = 0;
+  let cycleCount = 0;
+  periods.forEach(p => {
+    if (p.cycleLength && p.cycleLength >= 15 && p.cycleLength <= 100) {
+      totalCycleDays += p.cycleLength;
+      cycleCount++;
     }
-  }
+  });
   
-  if (count > 0) {
-    const avg = Math.round(totalDays / count);
-    userSettings.cycleLength = avg;
-  }
+  // Calculate average period length
+  let totalPeriodDays = 0;
+  let periodCount = 0;
+  periods.forEach(p => {
+    if (p.start && p.end) {
+      const diff = Math.round((new Date(p.end) - new Date(p.start)) / (1000 * 60 * 60 * 24)) + 1;
+      if (diff >= 2 && diff <= 14) {
+        totalPeriodDays += diff;
+        periodCount++;
+      }
+    }
+  });
+  
+  calculatedStats.cycleLength = cycleCount > 0 ? Math.round(totalCycleDays / cycleCount) : 28;
+  calculatedStats.periodLength = periodCount > 0 ? Math.round(totalPeriodDays / periodCount) : 6;
+  calculatedStats.cycleCount = cycleCount;
+  calculatedStats.periodCount = periodCount;
 }
 
 function saveData() {
@@ -285,6 +313,18 @@ function setupEventListeners() {
   });
 
   // Settings
+  if (chkAutoCalculate) {
+    chkAutoCalculate.addEventListener('change', () => {
+      userSettings.autoCalculate = chkAutoCalculate.checked;
+      if (userSettings.autoCalculate) {
+        userSettings.cycleLength = calculatedStats.cycleLength;
+        userSettings.periodLength = calculatedStats.periodLength;
+      }
+      saveData();
+      updateUI();
+    });
+  }
+
   btnSaveCycle.addEventListener('click', () => {
     userSettings.cycleLength = parseInt(cycleLengthInput.value, 10) || 28;
     userSettings.periodLength = parseInt(periodLengthInput.value, 10) || 5;
@@ -382,9 +422,42 @@ function addRecord(record) {
 }
 
 function updateUI() {
+  calculateAverages();
+  if (userSettings.autoCalculate) {
+    userSettings.cycleLength = calculatedStats.cycleLength;
+    userSettings.periodLength = calculatedStats.periodLength;
+  }
   updateHomeCard();
   updateRecordsList();
   renderCalendar();
+  updateSettingsUI();
+}
+
+function updateSettingsUI() {
+  if (chkAutoCalculate) {
+    chkAutoCalculate.checked = userSettings.autoCalculate;
+  }
+  
+  if (statCycleLength) statCycleLength.textContent = calculatedStats.cycleLength;
+  if (statCycleCount) statCycleCount.textContent = calculatedStats.cycleCount;
+  if (statPeriodLength) statPeriodLength.textContent = calculatedStats.periodLength;
+  if (statPeriodCount) statPeriodCount.textContent = calculatedStats.periodCount;
+  
+  if (userSettings.autoCalculate) {
+    cycleLengthInput.value = calculatedStats.cycleLength;
+    periodLengthInput.value = calculatedStats.periodLength;
+    cycleLengthInput.disabled = true;
+    periodLengthInput.disabled = true;
+    btnSaveCycle.disabled = true;
+    btnSaveCycle.textContent = '自動計算中（免手動儲存）';
+  } else {
+    cycleLengthInput.value = userSettings.cycleLength;
+    periodLengthInput.value = userSettings.periodLength;
+    cycleLengthInput.disabled = false;
+    periodLengthInput.disabled = false;
+    btnSaveCycle.disabled = false;
+    btnSaveCycle.textContent = '儲存週期設定';
+  }
 }
 
 function updateHomeCard() {
@@ -495,7 +568,19 @@ function getPeriods() {
     periods.push(currentPeriod);
   }
   
-  // 依日期從新到舊排序
+  // 依日期從舊到新排序，以便計算兩次經期開始日之間的週期長度
+  periods.sort((a, b) => new Date(a.start) - new Date(b.start));
+  
+  for (let i = 1; i < periods.length; i++) {
+    const prevStart = new Date(periods[i-1].start);
+    const currStart = new Date(periods[i].start);
+    const diffDays = Math.round((currStart - prevStart) / (1000 * 60 * 60 * 24));
+    if (diffDays >= 15 && diffDays <= 100) {
+      periods[i].cycleLength = diffDays;
+    }
+  }
+  
+  // 依日期從新到舊排序返回
   return periods.sort((a, b) => new Date(b.start) - new Date(a.start));
 }
 
@@ -524,10 +609,15 @@ function updateRecordsList() {
       daysText = '進行中';
     }
     
+    let cycleText = '';
+    if (period.cycleLength) {
+      cycleText = ` | 週期：${period.cycleLength} 天`;
+    }
+    
     div.innerHTML = `
       <div class="record-info">
         <div class="record-date">🌸 ${period.start} ~ ${period.end || '進行中'}</div>
-        <div class="record-details">${daysText}</div>
+        <div class="record-details">${daysText}${cycleText}</div>
       </div>
       <div class="record-actions">
         <button class="btn-action edit-btn" onclick="editPeriod(${idx})"><i class="fa-solid fa-pen"></i> 修改</button>
