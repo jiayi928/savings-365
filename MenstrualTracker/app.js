@@ -59,6 +59,7 @@ const calendarModal = document.getElementById('calendar-modal');
 const modalDateLabel = document.getElementById('modal-date-label');
 const modalBtnStart = document.getElementById('modal-btn-start');
 const modalBtnEnd = document.getElementById('modal-btn-end');
+const modalBtnSkipped = document.getElementById('modal-btn-skipped');
 const modalBtnCancel = document.getElementById('modal-btn-cancel');
 
 let selectedDateStr = null;
@@ -259,6 +260,31 @@ function setupEventListeners() {
       // 背景非同步同步，不阻塞 UI
       syncToCloud(endRec);
       alert(`✅ 已將 ${label} 設為經期結束！`);
+    });
+  }
+
+  if (modalBtnSkipped) {
+    modalBtnSkipped.addEventListener('click', async () => {
+      if (!selectedDateStr) return;
+      
+      const label = selectedLabel; // 儲存所選日期的標籤，避免 closeModal 後變為 null
+      const skippedRec = {
+        date: selectedDateStr,
+        type: 'skipped',
+        flow: '無',
+        pain: '無',
+        notes: '本月無來潮'
+      };
+      
+      addRecord(skippedRec);
+      
+      saveData();
+      updateUI();
+      closeModal();
+      
+      // 背景非同步同步至雲端，不阻塞 UI
+      syncToCloud(skippedRec);
+      alert(`✅ 已將 ${label} 標記為本月無來潮！`);
     });
   }
 
@@ -479,15 +505,15 @@ function updateHomeCard() {
     cycleCircle.style.borderColor = 'var(--primary-light)';
     circleTitle.textContent = '距離下次經期';
     
-    // Calculate prediction
-    const startRecords = records.filter(r => r.type === 'start');
-    if (startRecords.length > 0) {
-      const lastStart = new Date(startRecords[0].date);
-      const nextDate = new Date(lastStart);
-      nextDate.setDate(lastStart.getDate() + userSettings.cycleLength);
+    // Find the latest significant event (start or skipped)
+    const latestEvent = records.find(r => r.type === 'start' || r.type === 'skipped');
+    
+    if (latestEvent) {
+      const baseDate = new Date(latestEvent.date);
+      const nextDate = new Date(baseDate);
+      nextDate.setDate(baseDate.getDate() + userSettings.cycleLength);
       
       const today = new Date();
-      // Reset times to compare just dates
       today.setHours(0,0,0,0);
       nextDate.setHours(0,0,0,0);
       
@@ -506,7 +532,12 @@ function updateHomeCard() {
       const yyyy = nextDate.getFullYear();
       const mm = String(nextDate.getMonth() + 1).padStart(2, '0');
       const dd = String(nextDate.getDate()).padStart(2, '0');
-      predictionText.textContent = `預測下次開始：${yyyy}/${mm}/${dd}`;
+      
+      if (latestEvent.type === 'skipped') {
+        predictionText.textContent = `預測下次開始（無來潮後）：${yyyy}/${mm}/${dd}`;
+      } else {
+        predictionText.textContent = `預測下次開始：${yyyy}/${mm}/${dd}`;
+      }
     } else {
       daysCountdown.textContent = '--';
       predictionText.textContent = '尚無足夠紀錄進行預測';
@@ -533,7 +564,8 @@ function getPeriods() {
         start: r.date,
         end: null,
         startRecord: r,
-        endRecord: null
+        endRecord: null,
+        type: 'normal'
       };
     } else if (r.type === 'end') {
       if (currentPeriod) {
@@ -549,9 +581,19 @@ function getPeriods() {
           start: autoStart.toISOString().split('T')[0],
           end: r.date,
           startRecord: null,
-          endRecord: r
+          endRecord: r,
+          type: 'normal'
         });
       }
+    } else if (r.type === 'skipped') {
+      // 處理本月無來潮紀錄
+      periods.push({
+        start: r.date,
+        end: r.date,
+        startRecord: r,
+        endRecord: null,
+        type: 'skipped'
+      });
     }
   });
   
@@ -572,11 +614,14 @@ function getPeriods() {
   periods.sort((a, b) => new Date(a.start) - new Date(b.start));
   
   for (let i = 1; i < periods.length; i++) {
-    const prevStart = new Date(periods[i-1].start);
-    const currStart = new Date(periods[i].start);
-    const diffDays = Math.round((currStart - prevStart) / (1000 * 60 * 60 * 24));
-    if (diffDays >= 15 && diffDays <= 100) {
-      periods[i].cycleLength = diffDays;
+    // 只有當前與前一次皆非 skipped 時才計算正常的週期長度
+    if (periods[i].type !== 'skipped' && periods[i-1].type !== 'skipped') {
+      const prevStart = new Date(periods[i-1].start);
+      const currStart = new Date(periods[i].start);
+      const diffDays = Math.round((currStart - prevStart) / (1000 * 60 * 60 * 24));
+      if (diffDays >= 20 && diffDays <= 45) { // 限制 20-45 天，過濾 skipped 造成的異常間隔
+        periods[i].cycleLength = diffDays;
+      }
     }
   }
   
@@ -601,29 +646,41 @@ function updateRecordsList() {
     const div = document.createElement('div');
     div.className = 'record-item';
     
-    let daysText = '';
-    if (period.end) {
-      const diff = Math.round((new Date(period.end) - new Date(period.start)) / (1000 * 60 * 60 * 24)) + 1;
-      daysText = `共 ${diff} 天`;
+    if (period.type === 'skipped') {
+      div.innerHTML = `
+        <div class="record-info">
+          <div class="record-date" style="color: var(--text-muted);"><i class="fa-solid fa-ban"></i> 🚫 ${period.start} 標記本月無來潮</div>
+          <div class="record-details">未潮</div>
+        </div>
+        <div class="record-actions">
+          <button class="btn-action delete-btn" onclick="deletePeriod(${idx})"><i class="fa-solid fa-trash"></i> 刪除</button>
+        </div>
+      `;
     } else {
-      daysText = '進行中';
+      let daysText = '';
+      if (period.end) {
+        const diff = Math.round((new Date(period.end) - new Date(period.start)) / (1000 * 60 * 60 * 24)) + 1;
+        daysText = `共 ${diff} 天`;
+      } else {
+        daysText = '進行中';
+      }
+      
+      let cycleText = '';
+      if (period.cycleLength) {
+        cycleText = ` | 週期：${period.cycleLength} 天`;
+      }
+      
+      div.innerHTML = `
+        <div class="record-info">
+          <div class="record-date">🌸 ${period.start} ~ ${period.end || '進行中'}</div>
+          <div class="record-details">${daysText}${cycleText}</div>
+        </div>
+        <div class="record-actions">
+          <button class="btn-action edit-btn" onclick="editPeriod(${idx})"><i class="fa-solid fa-pen"></i> 修改</button>
+          <button class="btn-action delete-btn" onclick="deletePeriod(${idx})"><i class="fa-solid fa-trash"></i> 刪除</button>
+        </div>
+      `;
     }
-    
-    let cycleText = '';
-    if (period.cycleLength) {
-      cycleText = ` | 週期：${period.cycleLength} 天`;
-    }
-    
-    div.innerHTML = `
-      <div class="record-info">
-        <div class="record-date">🌸 ${period.start} ~ ${period.end || '進行中'}</div>
-        <div class="record-details">${daysText}${cycleText}</div>
-      </div>
-      <div class="record-actions">
-        <button class="btn-action edit-btn" onclick="editPeriod(${idx})"><i class="fa-solid fa-pen"></i> 修改</button>
-        <button class="btn-action delete-btn" onclick="deletePeriod(${idx})"><i class="fa-solid fa-trash"></i> 刪除</button>
-      </div>
-    `;
     
     recordsList.appendChild(div);
   });
@@ -687,17 +744,28 @@ window.deletePeriod = async function(idx) {
   const period = periods[idx];
   if (!period) return;
   
-  if (confirm(`確定要刪除這筆經期紀錄嗎？\n區間: ${period.start} ~ ${period.end || '進行中'}`)) {
+  let confirmMsg = '';
+  if (period.type === 'skipped') {
+    confirmMsg = `確定要刪除這筆「無來潮」標記嗎？\n日期: ${period.start}`;
+  } else {
+    confirmMsg = `確定要刪除這筆經期紀錄嗎？\n區間: ${period.start} ~ ${period.end || '進行中'}`;
+  }
+  
+  if (confirm(confirmMsg)) {
     // 1. 本機即時刪除
-    if (period.startRecord) {
-      records = records.filter(r => !(r.date === period.startRecord.date && r.type === 'start'));
-    }
-    if (period.endRecord) {
-      records = records.filter(r => !(r.date === period.endRecord.date && r.type === 'end'));
-    }
-    
-    if (currentPeriodStart === period.start) {
-      currentPeriodStart = null;
+    if (period.type === 'skipped') {
+      records = records.filter(r => !(r.date === period.start && r.type === 'skipped'));
+    } else {
+      if (period.startRecord) {
+        records = records.filter(r => !(r.date === period.startRecord.date && r.type === 'start'));
+      }
+      if (period.endRecord) {
+        records = records.filter(r => !(r.date === period.endRecord.date && r.type === 'end'));
+      }
+      
+      if (currentPeriodStart === period.start) {
+        currentPeriodStart = null;
+      }
     }
     
     saveData();
@@ -705,11 +773,15 @@ window.deletePeriod = async function(idx) {
     
     // 2. 背景同步
     const syncPromises = [];
-    if (period.startRecord) {
-      syncPromises.push(syncToCloud({ date: period.startRecord.date, type: 'start', action: 'delete' }));
-    }
-    if (period.endRecord) {
-      syncPromises.push(syncToCloud({ date: period.endRecord.date, type: 'end', action: 'delete' }));
+    if (period.type === 'skipped') {
+      syncPromises.push(syncToCloud({ date: period.start, type: 'skipped', action: 'delete' }));
+    } else {
+      if (period.startRecord) {
+        syncPromises.push(syncToCloud({ date: period.startRecord.date, type: 'start', action: 'delete' }));
+      }
+      if (period.endRecord) {
+        syncPromises.push(syncToCloud({ date: period.endRecord.date, type: 'end', action: 'delete' }));
+      }
     }
     
     Promise.all(syncPromises)
@@ -732,11 +804,12 @@ function renderCalendar() {
   // 找出經期紀錄的日期
   const periodDates = new Set();
   const predictedDates = new Set();
+  const skippedDates = new Set();
   
   // 1. 整理過去已發生的經期區間並全部塗色
   const periods = getPeriods();
   periods.forEach(period => {
-    if (period.start) {
+    if (period.type !== 'skipped' && period.start) {
       const start = new Date(period.start);
       let end;
       if (period.end) {
@@ -756,10 +829,12 @@ function renderCalendar() {
     }
   });
 
-  // 2. 額外將詳細紀錄 (log) 的日期塗色
+  // 2. 額外將詳細紀錄 (log) 與無來潮 (skipped) 的日期整理出來
   records.forEach(r => {
     if (r.type === 'log') {
       periodDates.add(r.date);
+    } else if (r.type === 'skipped') {
+      skippedDates.add(r.date);
     }
   });
 
@@ -774,12 +849,12 @@ function renderCalendar() {
     }
   }
 
-  // 3. 預測下一次經期 (如果有足夠紀錄)
-  const startRecords = records.filter(r => r.type === 'start');
-  if (startRecords.length > 0) {
-    const lastStart = new Date(startRecords[0].date);
-    const nextStart = new Date(lastStart);
-    nextStart.setDate(lastStart.getDate() + userSettings.cycleLength);
+  // 4. 預測下一次經期 (基於最後一個開始或無來潮事件)
+  const latestEvent = records.find(r => r.type === 'start' || r.type === 'skipped');
+  if (latestEvent) {
+    const baseDate = new Date(latestEvent.date);
+    const nextStart = new Date(baseDate);
+    nextStart.setDate(baseDate.getDate() + userSettings.cycleLength);
     
     for(let i=0; i<userSettings.periodLength; i++) {
       let d = new Date(nextStart);
@@ -796,7 +871,7 @@ function renderCalendar() {
     calendarDays.appendChild(emptyDiv);
   }
   
-    // 每一天的格子
+  // 每一天的格子
   for (let i = 1; i <= daysInMonth; i++) {
     const dayDiv = document.createElement('div');
     dayDiv.className = 'calendar-day';
@@ -814,6 +889,10 @@ function renderCalendar() {
     if (periodDates.has(dateStr)) {
       dayDiv.classList.add('period');
     } 
+    // 是否為無來潮
+    else if (skippedDates.has(dateStr)) {
+      dayDiv.classList.add('skipped');
+    }
     // 是否為預測期
     else if (predictedDates.has(dateStr)) {
       dayDiv.classList.add('predicted');

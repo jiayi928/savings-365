@@ -483,6 +483,12 @@ input:focus, textarea:focus {
   border: 1px dashed var(--primary);
 }
 
+.calendar-day.skipped {
+  background-color: #e2e8f0;
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+
 .calendar-legend {
   display: flex;
   justify-content: center;
@@ -512,6 +518,11 @@ input:focus, textarea:focus {
 .dot-predicted {
   background-color: var(--primary-light);
   border: 1px dashed var(--primary);
+}
+
+.dot-skipped {
+  background-color: #e2e8f0;
+  border: 1px solid var(--text-muted);
 }
 
 /* 月曆提示文字 */
