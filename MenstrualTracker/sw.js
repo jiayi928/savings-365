@@ -1,5 +1,6 @@
-const CACHE_NAME = 'menstrual-tracker-v4';
+const CACHE_NAME = 'menstrual-tracker-v5';
 const urlsToCache = [
+  './',
   './index.html',
   './style.css',
   './app.js',
