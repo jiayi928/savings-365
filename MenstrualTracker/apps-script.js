@@ -99,7 +99,9 @@ function doGet(e) {
       records.push({
         timestamp: data[i][0],
         date: dateStr,
-        type: data[i][2] === 'start' || data[i][2] === '經期開始' ? 'start' : (data[i][2] === 'end' || data[i][2] === '經期結束' ? 'end' : 'log'),
+        type: data[i][2] === 'start' || data[i][2] === '經期開始' ? 'start' : 
+              (data[i][2] === 'end' || data[i][2] === '經期結束' ? 'end' : 
+              (data[i][2] === 'skipped' || data[i][2] === '無來潮' ? 'skipped' : 'log')),
         flow: data[i][3] || '',
         pain: data[i][4] || '',
         notes: data[i][5] || ''
