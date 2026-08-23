@@ -194,13 +194,9 @@ async function handleFiles(files) {
         return;
     }
     
-    for (let i = 0; i < allowedFiles.length; i++) {
-        const file = allowedFiles[i];
-        
-        // Progress updates
-        const percent = Math.round(((i + 1) / allowedFiles.length) * 100);
-        progressBar.style.width = `${percent}%`;
-        
+    // Process files in parallel to make it much faster!
+    let completedCount = 0;
+    const processPromises = allowedFiles.map(async (file) => {
         const fileId = Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
         
         try {
@@ -211,33 +207,13 @@ async function handleFiles(files) {
             const isWord = file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
                            file.name.toLowerCase().endsWith('.docx');
             
-            let arrayBuffer;
+            let arrayBuffer = await readFileAsArrayBuffer(file);
             let pageCount = 1;
             let isEncrypted = false;
             let originalType = isImage ? 'image' : (isWord ? 'word' : 'pdf');
             
-            if (isImage) {
-                loadingText.textContent = `正在將圖片轉換為 PDF: ${file.name}...`;
-                const imgBuffer = await readFileAsArrayBuffer(file);
-                let mimeType = file.type;
-                if (!mimeType) {
-                    mimeType = file.name.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
-                }
-                arrayBuffer = await imageToPdfBuffer(imgBuffer, mimeType);
-                pageCount = 1;
-            } else if (isWord) {
-                loadingText.textContent = `正在將 Word 轉換為 PDF: ${file.name}...`;
-                const docxBuffer = await readFileAsArrayBuffer(file);
-                arrayBuffer = await docxToPdfBuffer(docxBuffer);
-                try {
-                    const tempDoc = await PDFLib.PDFDocument.load(arrayBuffer);
-                    pageCount = tempDoc.getPageCount();
-                } catch (e) {
-                    console.error("Error reading page count of converted Word document", e);
-                    pageCount = 1;
-                }
-            } else {
-                arrayBuffer = await readFileAsArrayBuffer(file);
+            // For PDFs, we check encryption and get page count immediately (fast)
+            if (originalType === 'pdf') {
                 try {
                     const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
                     pageCount = pdfDoc.getPageCount();
@@ -250,9 +226,16 @@ async function handleFiles(files) {
                         throw err;
                     }
                 }
+            } else {
+                // Defer DOCX and image conversion to merge step
+                pageCount = 1;
             }
             
-            filesList.push({
+            completedCount++;
+            const percent = Math.round((completedCount / allowedFiles.length) * 100);
+            progressBar.style.width = `${percent}%`;
+            
+            return {
                 id: fileId,
                 file: file,
                 arrayBuffer: arrayBuffer,
@@ -262,14 +245,20 @@ async function handleFiles(files) {
                 isEncrypted: isEncrypted,
                 originalType: originalType,
                 pageRange: ''
-            });
+            };
             
         } catch (e) {
             console.error(e);
             showToast(`無法讀取檔案: ${file.name}，可能已損壞。`, 'danger');
+            completedCount++;
+            return null;
         }
-    }
+    });
     
+    const results = await Promise.all(processPromises);
+    const validItems = results.filter(item => item !== null);
+    
+    filesList.push(...validItems);
     fileInput.value = '';
     loadingOverlay.style.display = 'none';
     renderFileList();
@@ -521,11 +510,29 @@ mergeBtn.addEventListener('click', async () => {
             const progressPercent = Math.round((i / filesList.length) * 100);
             progressBar.style.width = `${progressPercent}%`;
             
+            let pdfBuffer = item.arrayBuffer;
+            let pageCount = item.pageCount;
+            
+            if (item.originalType === 'image') {
+                loadingText.textContent = `正在轉換圖片: ${item.name}...`;
+                let mimeType = item.file.type;
+                if (!mimeType) {
+                    mimeType = item.name.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
+                }
+                pdfBuffer = await imageToPdfBuffer(item.arrayBuffer, mimeType);
+                pageCount = 1;
+            } else if (item.originalType === 'word') {
+                loadingText.textContent = `正在轉換 Word 文件: ${item.name}...`;
+                pdfBuffer = await docxToPdfBuffer(item.arrayBuffer);
+                const tempDoc = await PDFLib.PDFDocument.load(pdfBuffer);
+                pageCount = tempDoc.getPageCount();
+            }
+            
             // Load source document
-            const sourcePdf = await PDFLib.PDFDocument.load(item.arrayBuffer);
+            const sourcePdf = await PDFLib.PDFDocument.load(pdfBuffer);
             
             // Resolve custom page range indices
-            const pageIndices = parsePageRange(item.pageRange, item.pageCount);
+            const pageIndices = parsePageRange(item.pageRange, pageCount);
             
             if (pageIndices.length > 0) {
                 const copiedPages = await mergedPdf.copyPages(sourcePdf, pageIndices);
