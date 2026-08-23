@@ -174,6 +174,12 @@ async function handleFiles(files) {
     loadingText.textContent = '正在讀取檔案資訊...';
     progressBar.style.width = '0%';
     
+    // Check if any file is a Google Doc shortcut (.gdoc)
+    const hasGdoc = Array.from(files).some(file => file.name.toLowerCase().endsWith('.gdoc'));
+    if (hasGdoc) {
+        showToast('偵測到 Google 文件捷徑 (.gdoc)！請先至 Google 文件選擇「檔案」>「下載」為 Word (.docx) 或 PDF 檔案後再上傳。', 'warning');
+    }
+    
     const allowedFiles = Array.from(files).filter(file => {
         const nameLower = file.name.toLowerCase();
         return file.type === 'application/pdf' || 
@@ -189,7 +195,9 @@ async function handleFiles(files) {
     });
     
     if (allowedFiles.length === 0) {
-        showToast('請上傳有效的 PDF、圖片 (PNG, JPG) 或 Word 檔案 (.docx)！', 'danger');
+        if (!hasGdoc) {
+            showToast('請上傳有效的 PDF、圖片 (PNG, JPG) 或 Word 檔案 (.docx)！', 'danger');
+        }
         loadingOverlay.style.display = 'none';
         return;
     }
