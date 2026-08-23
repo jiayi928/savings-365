@@ -110,6 +110,64 @@ async function imageToPdfBuffer(imageBytes, mimeType) {
     return pdfBytes;
 }
 
+// Convert Word (docx) to PDF ArrayBuffer client-side using mammoth.js and html2pdf.js
+async function docxToPdfBuffer(arrayBuffer) {
+    // 1. Convert docx to HTML using mammoth
+    const result = await mammoth.convertToHtml({ arrayBuffer: arrayBuffer });
+    const htmlContent = result.value;
+    
+    // 2. Create a temporary container in DOM
+    const element = document.createElement('div');
+    element.style.padding = '20mm'; // Standard A4 margins
+    element.style.color = '#000000';
+    element.style.backgroundColor = '#ffffff';
+    element.style.fontFamily = 'Arial, "Microsoft JhengHei", sans-serif';
+    element.style.fontSize = '11pt';
+    element.style.lineHeight = '1.6';
+    element.innerHTML = htmlContent;
+    
+    // Auto style elements to look clean in PDF
+    element.querySelectorAll('table').forEach(table => {
+        table.style.width = '100%';
+        table.style.borderCollapse = 'collapse';
+        table.style.margin = '15px 0';
+        table.querySelectorAll('td, th').forEach(cell => {
+            cell.style.border = '1px solid #cccccc';
+            cell.style.padding = '8px';
+        });
+    });
+    element.querySelectorAll('p').forEach(p => {
+        p.style.margin = '0 0 10px 0';
+    });
+    
+    document.body.appendChild(element);
+    
+    // 3. Convert HTML to PDF using html2pdf
+    const opt = {
+        margin:       0,
+        filename:     'word_converted.pdf',
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true, logging: false },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+    
+    const pdfBlob = await html2pdf().set(opt).from(element).outputPdf('blob');
+    
+    // Clean up DOM
+    document.body.removeChild(element);
+    
+    // Read blob as ArrayBuffer/Uint8Array
+    const reader = new FileReader();
+    const pdfBufferPromise = new Promise((resolve, reject) => {
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(reader.error);
+    });
+    reader.readAsArrayBuffer(pdfBlob);
+    
+    const convertedBuffer = await pdfBufferPromise;
+    return new Uint8Array(convertedBuffer);
+}
+
 // File processing and loading metadata
 async function handleFiles(files) {
     loadingOverlay.style.display = 'flex';
@@ -125,11 +183,13 @@ async function handleFiles(files) {
                file.type.startsWith('image/jpg') ||
                nameLower.endsWith('.png') ||
                nameLower.endsWith('.jpg') ||
-               nameLower.endsWith('.jpeg');
+               nameLower.endsWith('.jpeg') ||
+               file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+               nameLower.endsWith('.docx');
     });
     
     if (allowedFiles.length === 0) {
-        showToast('請上傳有效的 PDF 或圖片檔案 (PNG, JPG)！', 'danger');
+        showToast('請上傳有效的 PDF、圖片 (PNG, JPG) 或 Word 檔案 (.docx)！', 'danger');
         loadingOverlay.style.display = 'none';
         return;
     }
@@ -148,11 +208,13 @@ async function handleFiles(files) {
                             file.name.toLowerCase().endsWith('.png') || 
                             file.name.toLowerCase().endsWith('.jpg') || 
                             file.name.toLowerCase().endsWith('.jpeg');
+            const isWord = file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+                           file.name.toLowerCase().endsWith('.docx');
             
             let arrayBuffer;
             let pageCount = 1;
             let isEncrypted = false;
-            let originalType = isImage ? 'image' : 'pdf';
+            let originalType = isImage ? 'image' : (isWord ? 'word' : 'pdf');
             
             if (isImage) {
                 loadingText.textContent = `正在將圖片轉換為 PDF: ${file.name}...`;
@@ -163,6 +225,17 @@ async function handleFiles(files) {
                 }
                 arrayBuffer = await imageToPdfBuffer(imgBuffer, mimeType);
                 pageCount = 1;
+            } else if (isWord) {
+                loadingText.textContent = `正在將 Word 轉換為 PDF: ${file.name}...`;
+                const docxBuffer = await readFileAsArrayBuffer(file);
+                arrayBuffer = await docxToPdfBuffer(docxBuffer);
+                try {
+                    const tempDoc = await PDFLib.PDFDocument.load(arrayBuffer);
+                    pageCount = tempDoc.getPageCount();
+                } catch (e) {
+                    console.error("Error reading page count of converted Word document", e);
+                    pageCount = 1;
+                }
             } else {
                 arrayBuffer = await readFileAsArrayBuffer(file);
                 try {
@@ -242,6 +315,8 @@ function renderFileList() {
             badgeHTML = `<span class="badge badge-warning"><i data-lucide="lock" style="width:12px;height:12px;display:inline-block;margin-right:2px;vertical-align:middle;"></i>已加密/受保護</span>`;
         } else if (item.originalType === 'image') {
             badgeHTML = `<span class="badge badge-success"><i data-lucide="image" style="width:12px;height:12px;display:inline-block;margin-right:2px;vertical-align:middle;"></i>圖片頁面</span>`;
+        } else if (item.originalType === 'word') {
+            badgeHTML = `<span class="badge badge-word"><i data-lucide="file-text" style="width:12px;height:12px;display:inline-block;margin-right:2px;vertical-align:middle;"></i>Word 文件 (${item.pageCount} 頁)</span>`;
         } else {
             badgeHTML = `<span class="badge badge-info">${item.pageCount} 頁</span>`;
         }
@@ -268,8 +343,8 @@ function renderFileList() {
             `;
         }
         
-        const iconName = item.originalType === 'image' ? 'image' : 'file-text';
-        const iconColor = item.originalType === 'image' ? 'var(--success)' : 'var(--primary)';
+        const iconName = item.originalType === 'image' ? 'image' : (item.originalType === 'word' ? 'file-text' : 'file-text');
+        const iconColor = item.originalType === 'image' ? 'var(--success)' : (item.originalType === 'word' ? '#60a5fa' : 'var(--primary)');
         
         li.innerHTML = `
             <div class="drag-handle" title="拖曳以排序">

@@ -19,6 +19,12 @@
     <!-- pdf-lib library from CDN -->
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     
+    <!-- mammoth.js for converting Word (docx) to HTML client-side -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+    
+    <!-- html2pdf.js for converting HTML DOM to PDF client-side -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
     <!-- Custom styling -->
     <link rel="stylesheet" href="styles.css">
 </head>
@@ -42,10 +48,10 @@
             <div class="drop-zone-icon-wrapper">
                 <i data-lucide="file-up"></i>
             </div>
-            <h3>拖曳 PDF 或圖片檔案至此處</h3>
+            <h3>拖曳 PDF、圖片或 Word 檔案至此處</h3>
             <p>或是點擊此處瀏覽您的電腦檔案</p>
-            <p style="font-size: 0.8rem; color: rgba(255,255,255,0.3)">支援多個 PDF 及圖片 (PNG, JPG) 同時選取</p>
-            <input type="file" id="fileInput" class="file-input" accept="application/pdf, image/png, image/jpeg, image/jpg" multiple>
+            <p style="font-size: 0.8rem; color: rgba(255,255,255,0.3)">支援 PDF、圖片 (PNG, JPG) 及 Word (.docx) 檔案</p>
+            <input type="file" id="fileInput" class="file-input" accept="application/pdf, image/png, image/jpeg, image/jpg, application/vnd.openxmlformats-officedocument.wordprocessingml.document, .docx" multiple>
         </div>
 
         <!-- File List & Reorder Section -->

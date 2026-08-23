@@ -370,6 +370,12 @@ header p {
     color: #34d399;
 }
 
+.badge-word {
+    background: rgba(37, 99, 235, 0.12);
+    border: 1px solid rgba(37, 99, 235, 0.25);
+    color: #60a5fa; /* Word blue text */
+}
+
 /* File Actions (Page inputs & Delete) */
 .file-actions {
     display: flex;
